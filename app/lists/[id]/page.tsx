@@ -23,7 +23,7 @@ import {
   verticalListSortingStrategy,
   rectSortingStrategy
 } from '@dnd-kit/sortable'
-import { Calendar, Globe, Lock, ArrowLeft, Grid3x3, List as ListIcon, Eye, EyeOff, Download, Upload, Share2, Mail, X } from 'lucide-react'
+import { Calendar, Globe, Lock, ArrowLeft, Grid3x3, List as ListIcon, Eye, EyeOff, Download, Upload, Share2, Mail, X, MoreVertical, Edit } from 'lucide-react'
 import Link from 'next/link'
 
 interface Album {
@@ -70,6 +70,7 @@ export default function ListDetail() {
   const [importProgress, setImportProgress] = useState<string>('')
   const [deleteConfirm, setDeleteConfirm] = useState<{ listAlbumId: string, albumTitle: string, artist: string } | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showActionsMenu, setShowActionsMenu] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -509,115 +510,94 @@ export default function ListDetail() {
           {session?.user ? "Retour aux listes" : "Retour à l'exploration"}
         </Link>
 
-        <div className="glass rounded-2xl p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                {list.title}
-              </h1>
+        {/* Header compact avec actions sticky */}
+        <div className="glass rounded-xl p-5 mb-6 sticky top-16 z-30 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80">
+          <div className="flex items-center justify-between">
+            {/* Titre et metadata */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
+                  {list.title}
+                </h1>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {list.isPublic ? (
+                    <div className="inline-flex items-center px-2 py-0.5 bg-green-100 dark:bg-green-900/30 rounded text-xs font-medium text-green-700 dark:text-green-400">
+                      <Globe className="h-3 w-3 mr-1" />
+                      Public
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-medium text-gray-600 dark:text-gray-400">
+                      <Lock className="h-3 w-3 mr-1" />
+                      Privé
+                    </div>
+                  )}
+                  {list.period && (
+                    <div className="inline-flex items-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {list.period}
+                    </div>
+                  )}
+                  <span className="inline-flex items-center px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 rounded text-xs font-medium text-blue-700 dark:text-blue-400">
+                    {list.listAlbums.length} albums
+                  </span>
+                </div>
+              </div>
               {list.description && (
-                <p className="text-gray-600 dark:text-gray-300 mb-4 text-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
                   {list.description}
                 </p>
               )}
-              {list.sourceUrl && (
-                <div className="mb-4">
-                  <a
-                    href={list.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    <Globe className="h-4 w-4 mr-1" />
-                    Voir la source originale →
-                  </a>
-                </div>
-              )}
-              {list.isPublic && (
-                <div className="mb-4">
-                  <Link
-                    href={`/lists/${list.id}/share`}
-                    className="inline-flex items-center text-sm text-purple-600 dark:text-purple-400 hover:underline"
-                  >
-                    <Share2 className="h-4 w-4 mr-1" />
-                    Voir en mode partage →
-                  </Link>
-                </div>
-              )}
-              <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">{list.period && (
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    {list.period}
-                  </div>
-                )}
-                <div className="flex items-center">{list.isPublic ? (
-                    <>
-                      <div className="inline-flex items-center px-3 py-1 bg-green-600 rounded-lg">
-                        <Globe className="h-4 w-4 mr-2 text-white" />
-                        <span className="text-white font-medium">Publique</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="inline-flex items-center px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-lg">
-                        <Lock className="h-4 w-4 mr-2 text-gray-600 dark:text-gray-400" />
-                        <span className="text-gray-600 dark:text-gray-400 font-medium">Privée</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <span>{list.listAlbums.length} album{list.listAlbums.length > 1 ? 's' : ''}</span>
-              </div>
             </div>
+
+            {/* Actions compactes */}
             {isOwner && (
-              <div className="ml-4 flex items-center space-x-2">
+              <div className="ml-4 flex items-center gap-1">
                 <button
                   onClick={() => setShowShareModal(true)}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl font-medium flex items-center space-x-2"
-                  title="Partager la liste"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+                  title="Partager"
                 >
                   <Share2 className="h-4 w-4" />
-                  <span>Partager</span>
                 </button>
                 
                 <div className="relative group">
                   <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-700 dark:text-gray-300 disabled:opacity-50"
                     title="Exporter"
                     disabled={isImporting}
                   >
                     <Download className="h-4 w-4" />
-                    <span>Exporter</span>
                   </button>
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border border-gray-200 dark:border-gray-700">
+                  <div className="absolute right-0 mt-1 w-52 bg-white dark:bg-gray-800 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border border-gray-200 dark:border-gray-700">
                     <button
                       onClick={handleExportCSV}
                       disabled={isImporting}
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-t-lg flex items-center space-x-2"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-t-lg flex items-center gap-2"
                     >
                       <Download className="h-4 w-4" />
                       <div>
-                        <div className="font-medium">Albums uniquement</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Format CSV</div>
+                        <div className="font-medium text-xs">CSV</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Albums uniquement</div>
                       </div>
                     </button>
                     <button
                       onClick={handleExportFull}
                       disabled={isImporting}
-                      className="w-full px-4 py-3 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-b-lg flex items-center space-x-2"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-b-lg flex items-center gap-2"
                     >
                       <Download className="h-4 w-4" />
                       <div>
-                        <div className="font-medium">Liste complète</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Métadonnées + albums (JSON)</div>
+                        <div className="font-medium text-xs">JSON</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Liste complète</div>
                       </div>
                     </button>
                   </div>
                 </div>
 
-                <label className={`px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all shadow-lg hover:shadow-xl font-medium flex items-center space-x-2 ${isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                <label className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-700 dark:text-gray-300 ${isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  title="Importer CSV"
+                >
                   <Upload className="h-4 w-4" />
-                  <span>Importer</span>
                   <input
                     type="file"
                     accept=".csv"
@@ -626,12 +606,53 @@ export default function ListDetail() {
                     className="hidden"
                   />
                 </label>
+
+                <div className="h-5 w-px bg-gray-300 dark:bg-gray-600 mx-1"></div>
+
                 <Link
                   href={`/lists/${list.id}/edit`}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all shadow-lg hover:shadow-xl font-medium"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+                  title="Modifier"
                 >
-                  Modifier
+                  <Edit className="h-4 w-4" />
                 </Link>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setShowActionsMenu(!showActionsMenu)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+                    title="Plus d'options"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                  {showActionsMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowActionsMenu(false)}></div>
+                      <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-200 dark:border-gray-700 py-1">
+                        {list.sourceUrl && (
+                          <a
+                            href={list.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 text-gray-700 dark:text-gray-300"
+                          >
+                            <Globe className="h-4 w-4" />
+                            Source originale
+                          </a>
+                        )}
+                        {list.isPublic && (
+                          <Link
+                            href={`/lists/${list.id}/share`}
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 text-gray-700 dark:text-gray-300"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Vue partage
+                          </Link>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>
