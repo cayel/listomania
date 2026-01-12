@@ -35,6 +35,7 @@ export default function Lists() {
   const [isLoading, setIsLoading] = useState(true)
   const [isImporting, setIsImporting] = useState(false)
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, title: string } | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -62,21 +63,41 @@ export default function Lists() {
     }
   }
 
-  const deleteList = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette liste ?')) {
-      return
-    }
+  const handleDeleteClick = (id: string, title: string) => {
+    setDeleteConfirm({ id, title })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return
 
     try {
-      const response = await fetch(`/api/lists/${id}`, {
+      const response = await fetch(`/api/lists/${deleteConfirm.id}`, {
         method: 'DELETE'
       })
 
       if (response.ok) {
-        setLists(lists.filter(list => list.id !== id))
+        setLists(lists.filter(list => list.id !== deleteConfirm.id))
+        setNotification({ 
+          type: 'success', 
+          message: 'Liste supprimée avec succès' 
+        })
+        setTimeout(() => setNotification(null), 3000)
+      } else {
+        setNotification({ 
+          type: 'error', 
+          message: 'Erreur lors de la suppression' 
+        })
+        setTimeout(() => setNotification(null), 3000)
       }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)
+      setNotification({ 
+        type: 'error', 
+        message: 'Erreur lors de la suppression' 
+      })
+      setTimeout(() => setNotification(null), 3000)
+    } finally {
+      setDeleteConfirm(null)
     }
   }
 
@@ -143,6 +164,34 @@ export default function Lists() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 gradient-bg">
       <Navbar />
+      
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Confirmer la suppression
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Êtes-vous sûr de vouloir supprimer la liste <span className="font-semibold text-gray-900 dark:text-white">"{deleteConfirm.title}"</span> ? Cette action est irréversible.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Supprimer
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Notification */}
       {notification && (
@@ -271,7 +320,10 @@ export default function Lists() {
                     Modifier
                   </Link>
                   <button
-                    onClick={() => deleteList(list.id)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleDeleteClick(list.id, list.title)
+                    }}
                     className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs font-medium transition-colors"
                   >
                     Supprimer
