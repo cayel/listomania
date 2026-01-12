@@ -250,10 +250,10 @@ export default function Lists() {
             {lists.map((list) => (
               <div
                 key={list.id}
-                className="group glass rounded-xl overflow-hidden hover:shadow-xl transition-all hover:scale-[1.02]"
+                className="group glass rounded-xl overflow-hidden hover:shadow-xl transition-all hover:scale-[1.02] flex flex-col"
               >
-                <Link href={`/lists/${list.id}`}>
-                  <div className="p-4">
+                <Link href={`/lists/${list.id}`} className="flex-1">
+                  <div className="p-4 h-full flex flex-col">
                     <div className="flex items-start justify-between mb-2">
                       <h2 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                         {list.title}
@@ -287,28 +287,32 @@ export default function Lists() {
                       </span>
                     </div>
 
-                    {list.listAlbums.length > 0 && (
-                      <div className="flex -space-x-1.5">
-                        {list.listAlbums.slice(0, 5).map((listAlbum, idx) => (
-                          <div
-                            key={idx}
-                            className="h-10 w-10 rounded border-2 border-white dark:border-gray-800 overflow-hidden bg-gray-200 dark:bg-gray-700"
-                          >
-                            {listAlbum.album.coverImage ? (
-                              <img
-                                src={listAlbum.album.coverImage}
-                                alt={listAlbum.album.title}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center text-xs text-gray-500">
-                                ?
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex-1 flex items-end">
+                      {list.listAlbums.length > 0 ? (
+                        <div className="flex -space-x-1.5">
+                          {list.listAlbums.slice(0, 5).map((listAlbum, idx) => (
+                            <div
+                              key={idx}
+                              className="h-10 w-10 rounded border-2 border-white dark:border-gray-800 overflow-hidden bg-gray-200 dark:bg-gray-700"
+                            >
+                              {listAlbum.album.coverImage ? (
+                                <img
+                                  src={listAlbum.album.coverImage}
+                                  alt={listAlbum.album.title}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center text-xs text-gray-500">
+                                  ?
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="h-10"></div>
+                      )}
+                    </div>
                   </div>
                 </Link>
 
