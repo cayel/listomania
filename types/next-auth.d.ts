@@ -8,6 +8,7 @@ declare module 'next-auth' {
       name?: string | null
       image?: string | null
       role: string
+      createdAt?: string
     }
   }
 
@@ -17,6 +18,7 @@ declare module 'next-auth' {
     name?: string | null
     image?: string | null
     role: string
+    createdAt?: Date
   }
 }
 

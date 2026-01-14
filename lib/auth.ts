@@ -42,7 +42,8 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           image: user.image,
-          role: user.role
+          role: user.role,
+          createdAt: user.createdAt
         }
       }
     })
@@ -62,6 +63,7 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name
         token.role = user.role
         token.picture = user.image
+        token.createdAt = user.createdAt
       }
       if (trigger === 'update') {
         if (session?.name) {
@@ -79,6 +81,7 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name as string
         session.user.role = token.role as string
         session.user.image = token.picture as string | null
+        session.user.createdAt = token.createdAt as string
       }
       return session
     }
