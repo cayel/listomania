@@ -3,7 +3,7 @@
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { ThemeToggle } from './theme-toggle'
-import { LogOut, ListMusic, User } from 'lucide-react'
+import { LogOut, ListMusic, User, Shield } from 'lucide-react'
 
 export function Navbar() {
   const { data: session } = useSession()
@@ -32,6 +32,15 @@ export function Navbar() {
                 >
                   Mes Listes
                 </Link>
+                {session.user?.role === 'admin' && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-purple-50 dark:bg-purple-900/20"
+                  >
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </Link>
+                )}
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
                     <User className="h-4 w-4" />

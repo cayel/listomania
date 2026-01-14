@@ -14,6 +14,7 @@ User
 ├── name: String (unique)
 ├── email: String (unique)
 ├── password: String (hashed)
+├── role: String ("user" | "admin")
 ├── lists: List[]
 └── timestamps
 
@@ -63,6 +64,7 @@ ListAlbum (table de liaison)
 ├── /auth
 │   ├── /signin
 │   └── /signup
+├── /admin (admin uniquement)
 ├── /lists
 │   ├── /new
 │   └── /[id]
@@ -80,6 +82,8 @@ ListAlbum (table de liaison)
 ├── /auth
 │   ├── /register (POST)
 │   └── /[...nextauth] (NextAuth)
+├── /admin
+│   └── /users (GET, PATCH) - Gestion utilisateurs (admin uniquement)
 ├── /lists
 │   ├── / (GET, POST)
 │   ├── /import-full (POST) - Import liste complète JSON
@@ -274,6 +278,59 @@ npm run build
 - ✅ Partage sécurisé par token
 - ✅ Gestion homonymes artistes (discogsArtistId)
 - ✅ Refactoring structure (types/, lib/utils/, constants)
+- ✅ Système de rôles (user/admin)
+- ✅ Page d'administration avec gestion utilisateurs
+
+## Système d'administration
+
+### Rôles utilisateurs
+
+Deux rôles disponibles :
+- **user** : Rôle par défaut, accès aux fonctionnalités standard
+- **admin** : Accès complet + page d'administration
+
+### Attribution du premier admin
+
+Pour créer le premier administrateur, exécuter directement dans PostgreSQL :
+```sql
+UPDATE "User" SET role = 'admin' WHERE email = 'votre@email.com';
+```
+
+### Page Administration (`/admin`)
+
+**Protection :**
+- Accessible uniquement aux utilisateurs avec `role = 'admin'`
+- Redirection automatique pour les non-admins
+- Vérification côté serveur (API) et client (page)
+
+**Fonctionnalités :**
+- **Dashboard** avec statistiques :
+  - Nombre total d'utilisateurs
+  - Nombre d'administrateurs
+  - Total des listes créées
+- **Tableau des utilisateurs** :
+  - Avatar, nom, email
+  - Date d'inscription
+  - Nombre de listes créées par utilisateur
+  - Modification du rôle en temps réel (dropdown)
+  
+**Sécurité :**
+- Un admin ne peut pas se retirer ses propres droits
+- Toutes les actions sont vérifiées côté serveur
+- Logs des modifications de rôles
+
+### API Admin
+
+**`GET /api/admin/users`**
+- Liste tous les utilisateurs avec leurs stats
+- Protégé : requiert `role = 'admin'`
+- Retourne : id, name, email, role, createdAt, count(lists)
+
+**`PATCH /api/admin/users`**
+- Modifie le rôle d'un utilisateur
+- Body : `{ userId: string, role: 'user' | 'admin' }`
+- Validation : empêche auto-suppression des droits admin
+- Protégé : requiert `role = 'admin'`
 
 ## Évolutions possibles
 

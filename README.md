@@ -5,7 +5,9 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 ## ✨ Fonctionnalités
 
 - 🔐 Authentification sécurisée (inscription/connexion)
-- 📝 Création de listes d'albums personnalisées
+- �️ Système de rôles (user/admin)
+- 📊 Page d'administration (gestion utilisateurs)
+- �📝 Création de listes d'albums personnalisées
 - 🔍 Recherche d'albums via l'API Discogs (+ de 14M d'albums)
 - 🎯 Gestion des homonymes d'artistes (via ID Discogs)
 - ↕️ Réorganisation par glisser-déposer
@@ -147,6 +149,8 @@ ranklist/
 ├── app/                        # Pages et routes Next.js (App Router)
 │   ├── api/                   # API Routes
 │   │   ├── auth/              # Authentification (register, [...nextauth])
+│   │   ├── admin/             # Administration
+│   │   │   └── users/         # Gestion utilisateurs (GET, PATCH)
 │   │   ├── lists/             # CRUD listes + albums
 │   │   │   ├── import-full/   # Import liste complète (JSON)
 │   │   │   └── [id]/          # Routes dynamiques
@@ -160,6 +164,7 @@ ranklist/
 │   │   ├── public/            # Listes publiques
 │   │   └── user/              # Profil utilisateur
 │   ├── auth/                  # Pages signin/signup
+│   ├── admin/                 # Page administration (admin uniquement)
 │   ├── lists/                 # Pages gestion listes
 │   │   ├── [id]/              # Détail + édition
 │   │   │   └── share/         # Vue publique partagée
@@ -239,6 +244,26 @@ ranklist/
 **Import :**
 - **CSV** : Ajouter des albums à une liste existante
 - **JSON** : Créer une nouvelle liste complète (métadonnées + albums)
+
+### Administration (Admin uniquement)
+
+**Accès :**
+- Le bouton "Admin" apparaît dans la navbar pour les utilisateurs avec le rôle `admin`
+- Route : `/admin`
+
+**Fonctionnalités :**
+- Dashboard avec statistiques (total utilisateurs, admins, listes)
+- Tableau complet des utilisateurs avec :
+  - Informations : nom, email, date d'inscription
+  - Nombre de listes créées
+  - Modification du rôle (user/admin) en temps réel
+- Sécurité : un admin ne peut pas se retirer ses propres droits
+
+**Attribution du rôle admin :**
+Pour le premier admin, exécuter directement dans la base de données :
+```sql
+UPDATE "User" SET role = 'admin' WHERE email = 'votre@email.com';
+```
 
 ## 🚀 Déploiement
 
