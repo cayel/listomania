@@ -1,0 +1,7 @@
+# Dossier des avatars uploadés
+
+Ce dossier contient les photos de profil uploadées par les utilisateurs.
+
+Les fichiers sont nommés selon le format : `{userId}-{timestamp}.{extension}`
+
+⚠️ Ce dossier doit être exclu du contrôle de version (déjà dans .gitignore)

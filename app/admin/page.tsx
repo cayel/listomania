@@ -11,6 +11,7 @@ interface AdminUser {
   name: string
   email: string
   role: string
+  image?: string | null
   createdAt: string
   _count: {
     lists: number
@@ -203,7 +204,19 @@ export default function AdminPage() {
                   <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                        {user.image ? (
+                          <img
+                            src={user.image}
+                            alt={user.name}
+                            className="h-10 w-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                            onError={(e) => {
+                              // En cas d'erreur de chargement, afficher l'initiale
+                              e.currentTarget.style.display = 'none'
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                            }}
+                          />
+                        ) : null}
+                        <div className={`h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold border-2 border-gray-200 dark:border-gray-700 ${user.image ? 'hidden' : ''}`}>
                           {user.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="font-medium text-gray-900 dark:text-white">

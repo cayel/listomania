@@ -38,12 +38,23 @@ export function Navbar() {
                     className="flex items-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-purple-50 dark:bg-purple-900/20"
                   >
                     <Shield className="h-4 w-4" />
-                    Admin
+                    Administration
                   </Link>
                 )}
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                    <User className="h-4 w-4" />
+                    {session.user?.image ? (
+                      <img 
+                        src={session.user.image} 
+                        alt={session.user.name || 'Avatar'}
+                        className="h-6 w-6 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
                     <Link href="/profile" className="font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       {session.user?.name || session.user?.email}
                     </Link>

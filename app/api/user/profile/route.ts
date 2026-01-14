@@ -5,7 +5,13 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const updateProfileSchema = z.object({
-  name: z.string().min(3, 'Le nom d\'utilisateur doit contenir au moins 3 caractères')
+  name: z.string().min(3, 'Le nom d\'utilisateur doit contenir au moins 3 caractères'),
+  image: z.string().optional()
+    .refine((val) => {
+      if (!val || val === '') return true
+      // Accepter les URLs complètes OU les chemins relatifs commençant par /avatars/
+      return val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/avatars/')
+    }, 'L\'image doit être une URL valide ou un chemin d\'avatar')
 })
 
 export async function PATCH(request: Request) {
@@ -20,7 +26,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json()
-    const { name } = updateProfileSchema.parse(body)
+    const { name, image } = updateProfileSchema.parse(body)
 
     // Vérifier si le nom d'utilisateur est déjà utilisé par un autre utilisateur
     const existingUser = await prisma.user.findFirst({
@@ -42,7 +48,10 @@ export async function PATCH(request: Request) {
     // Mettre à jour le profil
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
-      data: { name: name.trim() }
+      data: { 
+        name: name.trim(),
+        image: image && image.trim() !== '' ? image.trim() : null
+      }
     })
 
     return NextResponse.json({

@@ -1,16 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
-import { User, Mail, Calendar } from 'lucide-react'
+import { User, Mail, Calendar, Image as ImageIcon, Upload as UploadIcon } from 'lucide-react'
 
 export default function Profile() {
   const { data: session, status, update } = useSession()
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState('')
+  const [image, setImage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -24,8 +27,47 @@ export default function Profile() {
     if (session?.user?.name) {
       setName(session.user.name)
     }
+    if (session?.user?.image) {
+      setImage(session.user.image)
+    }
   }, [session])
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
+    setError('')
+    setIsUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload/avatar', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Erreur lors de l\'upload')
+        return
+      }
+
+      // Mettre à jour l'URL de l'image avec le chemin du fichier uploadé
+      setImage(data.imageUrl)
+      setSuccess('Image uploadée avec succès')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError('Erreur lors de l\'upload du fichier')
+    } finally {
+      setIsUploading(false)
+      // Reset l'input file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -49,7 +91,10 @@ export default function Profile() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name: name.trim() })
+        body: JSON.stringify({ 
+          name: name.trim(),
+          image: image.trim()
+        })
       })
 
       const data = await response.json()
@@ -61,7 +106,10 @@ export default function Profile() {
 
       setSuccess('Profil mis à jour avec succès')
       // Mettre à jour la session
-      await update({ name: name.trim() })
+      await update({ 
+        name: name.trim(),
+        image: image.trim() || null
+      })
     } catch (err) {
       setError('Une erreur est survenue')
     } finally {
@@ -121,6 +169,91 @@ export default function Profile() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Avatar Section */}
+            <div>
+              <label className="block text-sm font-bold text-gray-900 dark:text-white mb-3">
+                <div className="flex items-center space-x-2">
+                  <ImageIcon className="h-4 w-4" />
+                  <span>Photo de profil</span>
+                </div>
+              </label>
+              
+              <div className="flex items-center gap-6">
+                {/* Avatar preview */}
+                <div className="flex-shrink-0">
+                  {image ? (
+                    <img
+                      src={image}
+                      alt="Avatar"
+                      className="h-24 w-24 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
+                      onError={(e) => {
+                        e.currentTarget.src = ''
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  ) : (
+                    <div className="h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-3xl font-bold border-4 border-gray-200 dark:border-gray-700">
+                      {name?.charAt(0)?.toUpperCase() || session?.user?.email?.charAt(0)?.toUpperCase() || '?'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload and URL input */}
+                <div className="flex-1 space-y-3">
+                  {/* File Upload Button */}
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={isUploading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-blue-500 dark:hover:border-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <UploadIcon className="h-5 w-5 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {isUploading ? 'Upload en cours...' : 'Choisir un fichier'}
+                      </span>
+                    </button>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      JPG, PNG, GIF ou WEBP - Max 5MB
+                    </p>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">ou</span>
+                    </div>
+                  </div>
+
+                  {/* Image URL input */}
+                  <div>
+                    <input
+                      id="image"
+                      type="text"
+                      value={image}
+                      onChange={(e) => setImage(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700/50 dark:text-white transition-all"
+                      placeholder="https://exemple.com/avatar.jpg"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Ou entrez l'URL d'une image existante
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label htmlFor="name" className="block text-sm font-bold text-gray-900 dark:text-white mb-2">
                 <div className="flex items-center space-x-2">

@@ -27,6 +27,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        image: true,
         createdAt: true,
         _count: {
           select: {
@@ -92,6 +93,7 @@ export async function PATCH(request: Request) {
         name: true,
         email: true,
         role: true,
+        image: true,
         createdAt: true,
         _count: {
           select: {
