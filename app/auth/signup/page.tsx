@@ -71,18 +71,11 @@ export default function SignUp() {
       }
 
       // Connexion automatique après inscription
-      const result = await signIn('credentials', {
+      await signIn('credentials', {
         email: formData.email,
         password: formData.password,
-        redirect: false
+        callbackUrl: '/lists'
       })
-
-      if (result?.error) {
-        setError('Inscription réussie mais erreur de connexion')
-      } else {
-        router.push('/lists')
-        router.refresh()
-      }
     } catch (err) {
       setError('Une erreur est survenue')
     } finally {
