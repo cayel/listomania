@@ -71,6 +71,7 @@ export async function POST(
         album = await prisma.album.create({
           data: {
             discogsId: albumData.discogsId,
+            discogsType: 'master',
             discogsArtistId: discogsDetails.discogsArtistId,
             artist: discogsDetails.artist || albumData.artist,
             title: discogsDetails.title || albumData.title,
@@ -82,7 +83,10 @@ export async function POST(
         // Si l'appel Discogs échoue, créer avec les données fournies
         console.error('Erreur lors de la récupération des détails Discogs:', error)
         album = await prisma.album.create({
-          data: albumData
+          data: {
+            ...albumData,
+            discogsType: 'master'
+          }
         })
       }
     }

@@ -68,6 +68,8 @@ export default function ListDetail() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string, details?: string[] } | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const [importProgress, setImportProgress] = useState<string>('')
+  const [importCurrent, setImportCurrent] = useState(0)
+  const [importTotal, setImportTotal] = useState(0)
   const [deleteConfirm, setDeleteConfirm] = useState<{ listAlbumId: string, albumTitle: string, artist: string } | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showActionsMenu, setShowActionsMenu] = useState(false)
@@ -301,48 +303,95 @@ export default function ListDetail() {
     if (!file) return
 
     setIsImporting(true)
-    setImportProgress('Lecture du fichier...')
+    setImportProgress('Préparation du fichier...')
 
     try {
       const formData = new FormData()
       formData.append('file', file)
-
-      setImportProgress('Envoi du fichier au serveur...')
 
       const response = await fetch(`/api/lists/${params.id}/import`, {
         method: 'POST',
         body: formData
       })
 
-      setImportProgress('Traitement en cours...')
+      if (!response.body) {
+        throw new Error('Pas de stream de réponse')
+      }
 
-      if (response.ok) {
-        const data = await response.json()
-        const hasErrors = data.errors && data.errors.length > 0
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let finalResult: any = null
+
+      while (true) {
+        const { done, value } = await reader.read()
+        
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n').filter(line => line.trim())
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line)
+            
+            // Vérifier si c'est une erreur
+            if (data.error) {
+              setIsImporting(false)
+              setImportProgress('')
+              setNotification({ type: 'error', message: data.error })
+              setTimeout(() => setNotification(null), 5000)
+              event.target.value = ''
+              return
+            }
+            
+            // Vérifier si c'est une mise à jour de progression
+            if (data.current !== undefined && data.total !== undefined) {
+              setImportProgress(`${data.message} ${data.current}/${data.total}`)
+              setImportCurrent(data.current)
+              setImportTotal(data.total)
+            }
+            
+            // Vérifier si c'est le résultat final
+            if (data.success !== undefined) {
+              finalResult = data
+            }
+          } catch (e) {
+            console.error('Erreur de parsing JSON:', e, line)
+          }
+        }
+      }
+
+      if (finalResult) {
+        const hasErrors = finalResult.errors && finalResult.errors.length > 0
         
         setImportProgress('Mise à jour de la liste...')
         await fetchList()
         
         setIsImporting(false)
         setImportProgress('')
+        setImportCurrent(0)
+        setImportTotal(0)
         
         setNotification({ 
           type: hasErrors ? 'error' : 'success', 
-          message: data.message,
-          details: hasErrors ? data.errors : undefined
+          message: finalResult.message,
+          details: hasErrors ? finalResult.errors : undefined
         })
         setTimeout(() => setNotification(null), hasErrors ? 10000 : 5000)
       } else {
-        const error = await response.json()
         setIsImporting(false)
         setImportProgress('')
-        setNotification({ type: 'error', message: error.error || 'Erreur lors de l\'import' })
+        setImportCurrent(0)
+        setImportTotal(0)
+        setNotification({ type: 'error', message: 'Erreur lors de l\'import' })
         setTimeout(() => setNotification(null), 5000)
       }
     } catch (error) {
       console.error('Erreur lors de l\'import:', error)
       setIsImporting(false)
       setImportProgress('')
+      setImportCurrent(0)
+      setImportTotal(0)
       setNotification({ type: 'error', message: 'Erreur lors de l\'import du CSV' })
       setTimeout(() => setNotification(null), 5000)
     }
@@ -390,7 +439,10 @@ export default function ListDetail() {
                 {importProgress}
               </p>
               <div className="mt-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                <div 
+                  className="h-full bg-blue-600 rounded-full transition-all duration-300" 
+                  style={{ width: importTotal > 0 ? `${(importCurrent / importTotal) * 100}%` : '0%' }}
+                ></div>
               </div>
             </div>
           </div>

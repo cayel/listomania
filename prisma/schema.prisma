@@ -81,6 +81,7 @@ model List {
 model Album {
   id              String      @id @default(cuid())
   discogsId       String      @unique
+  discogsType     String?     @default("master") // "master" ou "release" pour savoir quel endpoint utiliser
   discogsArtistId String?     // ID Discogs de l'artiste pour différencier les homonymes
   artist          String      // Nom propre de l'artiste sans numéro (ex: "Mike Davis")
   title           String

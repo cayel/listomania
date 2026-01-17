@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Navbar } from '@/components/navbar'
-import { Shield, Users, Calendar, ListChecks } from 'lucide-react'
+import { Shield, Users, Calendar, ListChecks, AlertCircle } from 'lucide-react'
 
 interface AdminUser {
   id: string
@@ -134,7 +135,7 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="glass rounded-xl p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -174,6 +175,18 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+
+          <Link href="/admin/albums" className="glass rounded-xl p-6 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Albums problématiques</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">Gérer →</p>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Users Table */}

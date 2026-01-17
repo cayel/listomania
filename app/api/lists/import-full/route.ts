@@ -78,6 +78,7 @@ export async function POST(
               album = await prisma.album.create({
                 data: {
                   discogsId,
+                  discogsType: 'master',
                   discogsArtistId: discogsDetails.discogsArtistId || discogsArtistId,
                   title: discogsDetails.title || title,
                   artist: discogsDetails.artist || artist,
@@ -91,6 +92,7 @@ export async function POST(
               album = await prisma.album.create({
                 data: {
                   discogsId,
+                  discogsType: 'master',
                   discogsArtistId: discogsArtistId || null,
                   title,
                   artist,
@@ -105,6 +107,7 @@ export async function POST(
           album = await prisma.album.create({
             data: {
               discogsId: discogsId || `unknown-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              discogsType: null,
               discogsArtistId: discogsArtistId || null,
               title,
               artist,

@@ -2,52 +2,83 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { searchDiscogsAlbums, getDiscogsAlbumDetails, searchDiscogsAlbumsByArtistAndTitle, getDiscogsMasterDetails } from '@/lib/discogs'
+import { searchDiscogsAlbums, getDiscogsAlbumDetails, searchDiscogsAlbumsByArtistAndTitle, getDiscogsMasterDetails, getDiscogsDetails } from '@/lib/discogs'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    }
+  const encoder = new TextEncoder()
+  
+  // Fonction pour envoyer une mise à jour de progression
+  const sendProgress = (controller: ReadableStreamDefaultController, current: number, total: number, message: string) => {
+    const data = JSON.stringify({ current, total, message }) + '\n'
+    controller.enqueue(encoder.encode(data))
+  }
 
-    const { id } = await params
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const session = await getServerSession(authOptions)
+        if (!session) {
+          const errorData = JSON.stringify({ error: 'Non autorisé', status: 401 }) + '\n'
+          controller.enqueue(encoder.encode(errorData))
+          controller.close()
+          return
+        }
 
-    const list = await prisma.list.findUnique({
-      where: { id }
-    })
+        const { id } = await params
 
-    if (!list) {
-      return NextResponse.json({ error: 'Liste non trouvée' }, { status: 404 })
-    }
+        const list = await prisma.list.findUnique({
+          where: { id }
+        })
 
-    if (list.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 })
-    }
+        if (!list) {
+          const errorData = JSON.stringify({ error: 'Liste non trouvée', status: 404 }) + '\n'
+          controller.enqueue(encoder.encode(errorData))
+          controller.close()
+          return
+        }
 
-    const formData = await request.formData()
-    const file = formData.get('file') as File
+        if (list.userId !== session.user.id) {
+          const errorData = JSON.stringify({ error: 'Non autorisé', status: 403 }) + '\n'
+          controller.enqueue(encoder.encode(errorData))
+          controller.close()
+          return
+        }
 
-    if (!file) {
-      return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 })
-    }
+        const formData = await request.formData()
+        const file = formData.get('file') as File
 
-    const text = await file.text()
-    const lines = text.split('\n').filter(line => line.trim())
+        if (!file) {
+          const errorData = JSON.stringify({ error: 'Fichier manquant', status: 400 }) + '\n'
+          controller.enqueue(encoder.encode(errorData))
+          controller.close()
+          return
+        }
 
-    // Ignorer la première ligne (header)
-    const dataLines = lines.slice(1)
+        sendProgress(controller, 0, 100, 'Lecture du fichier...')
 
-    const imported = []
-    const errors = []
+        const text = await file.text()
+        const lines = text.split('\n').filter(line => line.trim())
 
-    // Détecter le séparateur (virgule ou point-virgule)
-    const separator = text.includes(';') && !text.includes(',') ? ';' : ','
+        // Ignorer la première ligne (header)
+        const dataLines = lines.slice(1)
+        const totalLines = dataLines.length
 
-    for (const line of dataLines) {
+        sendProgress(controller, 0, totalLines, `Traitement de ${totalLines} lignes...`)
+
+        const imported = []
+        const errors = []
+
+        // Détecter le séparateur (virgule ou point-virgule)
+        const separator = text.includes(';') && !text.includes(',') ? ';' : ','
+
+        for (let i = 0; i < dataLines.length; i++) {
+          const line = dataLines[i]
+          
+          // Envoyer une mise à jour de progression toutes les lignes
+          sendProgress(controller, i + 1, totalLines, 'Traitement en cours...')
       // Séparer la ligne selon le délimiteur détecté
       const parts = line.split(separator).map(p => p.trim().replace(/^"|"$/g, ''))
       
@@ -110,6 +141,7 @@ export async function POST(
             album = await prisma.album.create({
               data: {
                 discogsId: cleanDiscogsId,
+                discogsType: 'release',
                 discogsArtistId: discogsDetails.discogsArtistId,
                 title: discogsDetails.title || cleanTitle,
                 artist: discogsDetails.artist || cleanArtist,
@@ -132,6 +164,7 @@ export async function POST(
             album = await prisma.album.create({
               data: {
                 discogsId: cleanDiscogsId,
+                discogsType: null,
                 discogsArtistId: null,
                 title: cleanTitle,
                 artist: cleanArtist,
@@ -160,6 +193,7 @@ export async function POST(
           const album = await prisma.album.create({
             data: {
               discogsId: `unknown-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              discogsType: null,
               title: cleanTitle,
               artist: cleanArtist,
               year: year ? parseInt(year) : null,
@@ -180,8 +214,9 @@ export async function POST(
 
         // Prendre le premier résultat et récupérer ses détails complets
         const foundDiscogsId = results[0].id
+        const foundType = (results[0] as any).type // 'master' ou 'release'
         
-        console.log(`Using Discogs ID ${foundDiscogsId} for ${cleanArtist} - ${cleanTitle}`)
+        console.log(`Using Discogs ID ${foundDiscogsId} (${foundType}) for ${cleanArtist} - ${cleanTitle}`)
         
         // Créer ou récupérer l'album
         let album = await prisma.album.findUnique({
@@ -194,12 +229,13 @@ export async function POST(
 
         if (!album) {
           try {
-            // Récupérer les détails complets depuis Discogs (utiliser master endpoint)
-            const discogsDetails = await getDiscogsMasterDetails(foundDiscogsId)
+            // Récupérer les détails complets depuis Discogs (gère master et release automatiquement)
+            const discogsDetails = await getDiscogsDetails(foundDiscogsId, foundType)
             
             album = await prisma.album.create({
               data: {
                 discogsId: foundDiscogsId,
+                discogsType: foundType || 'master',
                 discogsArtistId: discogsDetails.discogsArtistId,
                 title: discogsDetails.title || cleanTitle,
                 artist: discogsDetails.artist || cleanArtist,
@@ -214,6 +250,7 @@ export async function POST(
             album = await prisma.album.create({
               data: {
                 discogsId: foundDiscogsId,
+                discogsType: foundType || 'master',
                 discogsArtistId: null,
                 title: albumData.title || cleanTitle,
                 artist: albumData.artist || cleanArtist,
@@ -248,17 +285,28 @@ export async function POST(
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      imported: imported.length,
-      errors,
-      message: `${imported.length} albums importés${errors.length > 0 ? `, ${errors.length} erreurs` : ''}`
-    })
-  } catch (error) {
-    console.error('Erreur lors de l\'import CSV:', error)
-    return NextResponse.json(
-      { error: 'Erreur lors de l\'import' },
-      { status: 500 }
-    )
-  }
+        // Envoyer le résultat final
+        const finalData = JSON.stringify({
+          success: true,
+          imported: imported.length,
+          errors,
+          message: `${imported.length} albums importés${errors.length > 0 ? `, ${errors.length} erreurs` : ''}`
+        }) + '\n'
+        controller.enqueue(encoder.encode(finalData))
+        controller.close()
+      } catch (error) {
+        console.error('Erreur lors de l\'import CSV:', error)
+        const errorData = JSON.stringify({ error: 'Erreur lors de l\'import', status: 500 }) + '\n'
+        controller.enqueue(encoder.encode(errorData))
+        controller.close()
+      }
+    }
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Transfer-Encoding': 'chunked',
+    },
+  })
 }
