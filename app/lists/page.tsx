@@ -208,14 +208,14 @@ export default function Lists() {
       )}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">
             Mes Listes
           </h1>
-          <div className="flex items-center space-x-4">
-            <label className={`bg-green-600 text-white hover:bg-green-700 px-6 py-3 rounded-xl font-medium inline-flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl ${isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}>
-              <Upload className="h-5 w-5" />
-              <span>Importer une liste</span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <label className={`bg-green-600 text-white hover:bg-green-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium inline-flex items-center justify-center space-x-2 transition-all shadow-lg hover:shadow-xl ${isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}>
+              <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Importer une liste</span>
               <input
                 type="file"
                 accept=".json"
@@ -226,10 +226,10 @@ export default function Lists() {
             </label>
             <Link
               href="/lists/new"
-              className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 rounded-xl font-medium inline-flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              className="bg-blue-600 text-white hover:bg-blue-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium inline-flex items-center justify-center space-x-2 transition-all shadow-lg hover:shadow-xl hover:scale-105"
             >
-              <Plus className="h-5 w-5" />
-              <span>Nouvelle Liste</span>
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Nouvelle Liste</span>
             </Link>
           </div>
         </div>
