@@ -109,8 +109,11 @@ export async function searchDiscogsAlbumsByArtistAndTitle(artist: string, title:
     throw new Error('DISCOGS_TOKEN n\'est pas défini dans les variables d\'environnement')
   }
 
+  console.log(`\n=== Searching Discogs for: "${artist}" - "${title}" ===`)
+
   try {
     // 1. D'abord chercher dans les masters
+    console.log(`Step 1: Searching masters...`)
     const masterResponse = await fetchWithRetry(
       `https://api.discogs.com/database/search?artist=${encodeURIComponent(artist)}&release_title=${encodeURIComponent(title)}&type=master&per_page=20`,
       {
@@ -118,7 +121,7 @@ export async function searchDiscogsAlbumsByArtistAndTitle(artist: string, title:
           'Authorization': `Discogs token=${DISCOGS_TOKEN}`,
           'User-Agent': 'ListOmania/1.0'
         },
-        next: { revalidate: 3600 } // Cache pour 1 heure
+        next: { revalidate: 3600 }
       }
     )
 
@@ -127,12 +130,15 @@ export async function searchDiscogsAlbumsByArtistAndTitle(artist: string, title:
     }
 
     const masterData = await masterResponse.json()
+    console.log(`Found ${masterData.results?.length || 0} masters`)
     
-    console.log(`Discogs master search for artist="${artist}" title="${title}":`, masterData.results.slice(0, 3).map((r: any) => ({ id: r.id, title: r.title, type: r.type })))
-    
-    // Si on trouve des masters, les utiliser
     if (masterData.results && masterData.results.length > 0) {
-      const results = masterData.results.map((result: DiscogsSearchResult) => ({
+      console.log(`First 3 masters:`, masterData.results.slice(0, 3).map((r: any) => ({ 
+        id: r.id, 
+        title: r.title 
+      })))
+      
+      const masters = masterData.results.map((result: DiscogsSearchResult) => ({
         id: result.id.toString(),
         title: extractAlbumTitle(result.title),
         artist: extractArtistFromTitle(result.title),
@@ -142,12 +148,13 @@ export async function searchDiscogsAlbumsByArtistAndTitle(artist: string, title:
         type: 'master'
       }))
       
-      return processAndScoreResults(results, artist, title)
+      // Retourner TOUS les masters trouvés, le premier étant souvent le bon
+      console.log(`✓ Returning ${masters.length} masters (best match first)`)
+      return masters
     }
     
-    // 2. Si aucun master trouvé, chercher dans les releases
-    console.log(`No master found, searching releases for artist="${artist}" title="${title}"`)
-    
+    // 2. Si aucun master, chercher dans les releases
+    console.log(`Step 2: No masters found, searching releases...`)
     const releaseResponse = await fetchWithRetry(
       `https://api.discogs.com/database/search?artist=${encodeURIComponent(artist)}&release_title=${encodeURIComponent(title)}&type=release&per_page=20`,
       {
@@ -164,11 +171,15 @@ export async function searchDiscogsAlbumsByArtistAndTitle(artist: string, title:
     }
 
     const releaseData = await releaseResponse.json()
-    
-    console.log(`Discogs release search for artist="${artist}" title="${title}":`, releaseData.results.slice(0, 3).map((r: any) => ({ id: r.id, title: r.title, type: r.type })))
+    console.log(`Found ${releaseData.results?.length || 0} releases`)
     
     if (releaseData.results && releaseData.results.length > 0) {
-      const results = releaseData.results.map((result: DiscogsSearchResult) => ({
+      console.log(`First 3 releases:`, releaseData.results.slice(0, 3).map((r: any) => ({ 
+        id: r.id, 
+        title: r.title 
+      })))
+      
+      const releases = releaseData.results.map((result: DiscogsSearchResult) => ({
         id: result.id.toString(),
         title: extractAlbumTitle(result.title),
         artist: extractArtistFromTitle(result.title),
@@ -178,59 +189,17 @@ export async function searchDiscogsAlbumsByArtistAndTitle(artist: string, title:
         type: 'release'
       }))
       
-      return processAndScoreResults(results, artist, title)
+      console.log(`✓ Returning ${releases.length} releases (best match first)`)
+      return releases
     }
 
     // 3. Si toujours rien, essayer une recherche générale
-    console.log(`No releases found either, trying general search for "${artist} ${title}"`)
+    console.log(`Step 3: No results found, trying general search...`)
     return searchDiscogsAlbums(`${artist} ${title}`)
   } catch (error) {
     console.error('Erreur lors de la recherche Discogs:', error)
     throw error
   }
-}
-
-// Fonction helper pour filtrer et scorer les résultats
-function processAndScoreResults(results: DiscogsAlbum[], artist: string, title: string): DiscogsAlbum[] {
-  // Filtrer et scorer les résultats par pertinence
-  const scoredResults = results.map((result: DiscogsAlbum) => {
-    let score = 0
-    const resultArtist = result.artist.toLowerCase()
-    const resultTitle = result.title.toLowerCase()
-    const searchArtist = artist.toLowerCase()
-    const searchTitle = title.toLowerCase()
-    
-    // Extraire le titre de l'album du format "Artiste - Album"
-    const albumTitle = resultTitle.includes(' - ') 
-      ? resultTitle.split(' - ').slice(1).join(' - ').trim()
-      : resultTitle
-    
-    // Score basé sur la correspondance exacte de l'artiste
-    if (resultArtist === searchArtist) {
-      score += 100
-    } else if (resultArtist.includes(searchArtist) || searchArtist.includes(resultArtist)) {
-      score += 50
-    }
-    
-    // Score basé sur la correspondance du titre
-    if (albumTitle === searchTitle) {
-      score += 100
-    } else if (albumTitle.includes(searchTitle) || searchTitle.includes(albumTitle)) {
-      score += 50
-    }
-    
-    return { ...result, score }
-  })
-
-  console.log(`Scored results:`, scoredResults.slice(0, 3).map((r: any) => ({ artist: r.artist, title: r.title, score: r.score })))
-
-  // Trier par score décroissant et ne garder que ceux avec un score > 0
-  const filteredResults = scoredResults
-    .filter((r: any) => r.score > 0)
-    .sort((a: any, b: any) => b.score - a.score)
-    .map(({ score, ...result }: any) => result)
-
-  return filteredResults
 }
 
 export async function getDiscogsAlbumDetails(discogsId: string): Promise<DiscogsAlbum> {

@@ -135,13 +135,26 @@ export async function POST(
           }
 
           // Album n'existe pas, récupérer les infos depuis Discogs
+          // Essayer d'abord comme master, puis comme release si échec
           try {
-            const discogsDetails = await getDiscogsAlbumDetails(cleanDiscogsId)
+            let discogsDetails
+            let discogsType = 'master'
+            
+            try {
+              discogsDetails = await getDiscogsDetails(cleanDiscogsId, 'master')
+              console.log(`✓ Found master ${cleanDiscogsId} for "${cleanArtist} - ${cleanTitle}"`)
+            } catch (masterError) {
+              // Pas un master, essayer comme release
+              console.log(`Not a master, trying as release for ID ${cleanDiscogsId}`)
+              discogsDetails = await getDiscogsDetails(cleanDiscogsId, 'release')
+              discogsType = 'release'
+              console.log(`✓ Found release ${cleanDiscogsId} for "${cleanArtist} - ${cleanTitle}"`)
+            }
             
             album = await prisma.album.create({
               data: {
                 discogsId: cleanDiscogsId,
-                discogsType: 'release',
+                discogsType: discogsType,
                 discogsArtistId: discogsDetails.discogsArtistId,
                 title: discogsDetails.title || cleanTitle,
                 artist: discogsDetails.artist || cleanArtist,

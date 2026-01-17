@@ -19,6 +19,7 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - 📥 Import/Export CSV (albums uniquement)
 - 📦 Import/Export JSON (liste complète avec métadonnées)
 - 🔖 URL de source pour listes importées
+- 🎵 Priorité aux masters Discogs (avec fallback sur releases)
 
 ## 🛠️ Stack Technique
 
@@ -31,7 +32,44 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - **API externe**: Discogs API
 - **Validation**: Zod
 
-## 📋 Prérequis
+## � Intégration Discogs
+
+### Stratégie de recherche
+
+L'application utilise une stratégie intelligente pour rechercher et importer des albums :
+
+1. **Recherche par artiste + titre**
+   - Recherche d'abord dans les **masters** Discogs (versions canoniques des albums)
+   - Si aucun master trouvé, recherche dans les **releases** (versions physiques spécifiques)
+   - Fallback sur recherche générale si nécessaire
+
+2. **Import CSV avec ID Discogs**
+   - Tentative en tant que master en priorité
+   - Si échec (404), tentative en tant que release
+   - Enregistrement du type (master/release) en base de données
+
+3. **Rate limiting**
+   - Respect strict de la limite Discogs (60 requêtes/minute)
+   - Délai de 1.1s entre chaque requête
+   - Retry automatique avec backoff exponentiel en cas de 429
+
+4. **Gestion des artistes homonymes**
+   - Stockage de `discogsArtistId` pour différencier les artistes
+   - Permet de gérer correctement les homonymes
+
+### Format CSV d'import
+
+```csv
+Rang,Artiste,Titre,Année,DiscogsId
+1,Pink Floyd,The Dark Side of the Moon,1973,178251
+2,The Beatles,Abbey Road,1969,24047
+```
+
+- **DiscogsId** (optionnel) : ID master ou release Discogs
+- Sans ID : recherche automatique artiste + titre
+- Avec ID : récupération directe depuis Discogs
+
+## �📋 Prérequis
 
 - Node.js 18+ 
 - PostgreSQL 14+
