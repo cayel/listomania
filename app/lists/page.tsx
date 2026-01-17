@@ -13,6 +13,7 @@ interface List {
   description?: string
   period?: string
   isPublic: boolean
+  isRanked?: boolean
   listAlbums: Array<{
     album: {
       id: string

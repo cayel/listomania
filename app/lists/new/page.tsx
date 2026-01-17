@@ -12,7 +12,8 @@ export default function NewList() {
     description: '',
     period: '',
     sourceUrl: '',
-    isPublic: false
+    isPublic: false,
+    isRanked: true
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -128,6 +129,19 @@ export default function NewList() {
             />
             <label htmlFor="isPublic" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
               Rendre cette liste publique
+            </label>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="isRanked"
+              type="checkbox"
+              checked={formData.isRanked}
+              onChange={(e) => setFormData({ ...formData, isRanked: e.target.checked })}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="isRanked" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+              Liste classée (avec numéros de rang)
             </label>
           </div>
 

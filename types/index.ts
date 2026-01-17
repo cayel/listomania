@@ -24,6 +24,7 @@ export interface List {
   sourceUrl?: string
   shareToken?: string
   isPublic: boolean
+  isRanked?: boolean
   userId: string
   listAlbums: ListAlbum[]
   user?: {

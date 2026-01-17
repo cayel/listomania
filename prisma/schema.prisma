@@ -68,6 +68,7 @@ model List {
   sourceUrl   String?     // URL de la source d'origine si liste importée
   shareToken  String?     @unique // Token unique pour partager les listes privées
   isPublic    Boolean     @default(false)
+  isRanked    Boolean     @default(true) // Indique si la liste est classée (avec rangs) ou non
   userId      String
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   listAlbums  ListAlbum[]

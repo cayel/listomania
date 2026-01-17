@@ -18,9 +18,10 @@ interface SortableAlbumItemProps {
   album: Album
   position: number
   onRemove: (listAlbumId: string, albumTitle?: string, artist?: string) => void
+  showRank?: boolean
 }
 
-export function SortableAlbumItem({ listAlbumId, album, position, onRemove }: SortableAlbumItemProps) {
+export function SortableAlbumItem({ listAlbumId, album, position, onRemove, showRank = true }: SortableAlbumItemProps) {
   const {
     attributes,
     listeners,
@@ -50,9 +51,11 @@ export function SortableAlbumItem({ listAlbumId, album, position, onRemove }: So
         <GripVertical className="h-6 w-6" />
       </button>
 
-      <div className="flex-shrink-0 text-2xl font-bold text-gray-400 dark:text-gray-500 w-8 text-center">
-        {position + 1}
-      </div>
+      {showRank && (
+        <div className="flex-shrink-0 text-2xl font-bold text-gray-400 dark:text-gray-500 w-8 text-center">
+          {position + 1}
+        </div>
+      )}
 
       <div className="flex-shrink-0 w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
         {album.coverImage ? (

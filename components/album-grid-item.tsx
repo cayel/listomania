@@ -19,9 +19,6 @@ interface AlbumGridItemProps {
   album: Album
   position: number
   onRemove: (listAlbumId: string, albumTitle?: string, artist?: string) => void
-  showArtist: boolean
-  showTitle: boolean
-  showYear: boolean
   showRank: boolean
   isOwner: boolean
 }
@@ -31,9 +28,6 @@ export function AlbumGridItem({
   album,
   position,
   onRemove,
-  showArtist,
-  showTitle,
-  showYear,
   showRank,
   isOwner
 }: AlbumGridItemProps) {
@@ -107,28 +101,22 @@ export function AlbumGridItem({
             )}
           </div>
         )}
-      </div>
-
-      {/* Album Info */}
-      {(showArtist || showTitle || showYear) && (
-        <div className="p-3 space-y-1">
-          {showArtist && (
-            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-              {album.artist}
-            </p>
-          )}
-          {showTitle && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-              {album.title}
-            </p>
-          )}
-          {showYear && album.year && (
-            <p className="text-xs text-gray-500 dark:text-gray-500">
+        
+        {/* Album Info - Overlay au survol */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+          <p className="text-white font-semibold text-sm truncate">
+            {album.artist}
+          </p>
+          <p className="text-white/90 text-xs truncate">
+            {album.title}
+          </p>
+          {album.year && (
+            <p className="text-white/70 text-xs mt-1">
               {album.year}
             </p>
           )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

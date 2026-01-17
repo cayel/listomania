@@ -9,7 +9,8 @@ const listSchema = z.object({
   description: z.string().optional(),
   period: z.string().optional(),
   sourceUrl: z.string().url().optional().or(z.literal('')),
-  isPublic: z.boolean().default(false)
+  isPublic: z.boolean().default(false),
+  isRanked: z.boolean().default(true)
 })
 
 // GET - Récupérer une liste spécifique

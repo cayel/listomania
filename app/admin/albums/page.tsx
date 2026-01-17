@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
@@ -234,8 +234,8 @@ export default function AdminAlbums() {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {albums.map((album) => (
-                    <>
-                    <tr key={album.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <React.Fragment key={album.id}>
+                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4">
                         <div className="flex items-start space-x-3">
                           {album.coverImage ? (
@@ -404,7 +404,7 @@ export default function AdminAlbums() {
                         </td>
                       </tr>
                     )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

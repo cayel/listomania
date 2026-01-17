@@ -28,6 +28,7 @@ interface List {
   period?: string
   sourceUrl?: string
   isPublic: boolean
+  isRanked?: boolean
   listAlbums: ListAlbum[]
   user: {
     name: string
@@ -180,6 +181,13 @@ export default function ShareList() {
               key={item.id}
               className="group relative aspect-square rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
             >
+              {/* Badge de rang */}
+              {list.isRanked !== false && (
+                <div className="absolute top-2 left-2 z-10 bg-black/60 text-white text-xs font-medium px-2 py-0.5 rounded backdrop-blur-sm">
+                  #{index + 1}
+                </div>
+              )}
+              
               {/* Image */}
               {item.album.coverImage ? (
                 <img

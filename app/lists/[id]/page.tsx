@@ -48,6 +48,7 @@ interface List {
   period?: string
   sourceUrl?: string
   isPublic: boolean
+  isRanked?: boolean
   listAlbums: ListAlbum[]
   userId?: string
 }
@@ -589,6 +590,11 @@ export default function ListDetail() {
                       {list.period}
                     </div>
                   )}
+                  {list.isRanked !== false && (
+                    <div className="inline-flex items-center px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 rounded text-xs font-medium text-purple-700 dark:text-purple-400">
+                      Classée
+                    </div>
+                  )}
                   <span className="inline-flex items-center px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 rounded text-xs font-medium text-blue-700 dark:text-blue-400">
                     {list.listAlbums.length} albums
                   </span>
@@ -720,7 +726,7 @@ export default function ListDetail() {
         )}
 
         {/* View Controls */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setViewMode('grid')}
@@ -739,46 +745,47 @@ export default function ListDetail() {
           </div>
           
           {viewMode === 'grid' && (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setShowRank(!showRank)}
-                  className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs transition-all ${showRank ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                >
-                  {showRank ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                  <span>Rang</span>
-                </button>
-                <button
-                  onClick={() => setShowArtist(!showArtist)}
-                  className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs transition-all ${showArtist ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                >
-                  {showArtist ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                  <span>Artiste</span>
-                </button>
-                <button
-                  onClick={() => setShowTitle(!showTitle)}
-                  className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs transition-all ${showTitle ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                >
-                  {showTitle ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                  <span>Titre</span>
-                </button>
-                <button
-                  onClick={() => setShowYear(!showYear)}
-                  className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs transition-all ${showYear ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
-                >
-                  {showYear ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                  <span>Année</span>
-                </button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-gray-600 dark:text-gray-400 mr-1">Colonnes:</span>
+              {/* Options mobiles (2-4) */}
+              <div className="flex items-center gap-0.5 sm:hidden">
+                {[2, 3, 4].map((cols) => (
+                  <button
+                    key={cols}
+                    onClick={() => setGridCols(cols)}
+                    className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                      gridCols === cols
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {cols}
+                  </button>
+                ))}
               </div>
-              
-              <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
-              
-              <div className="flex items-center gap-0.5">
+              {/* Options tablette (2-6) */}
+              <div className="hidden sm:flex md:hidden items-center gap-0.5">
+                {[2, 3, 4, 5, 6].map((cols) => (
+                  <button
+                    key={cols}
+                    onClick={() => setGridCols(cols)}
+                    className={`px-2.5 py-1 rounded text-xs transition-all ${
+                      gridCols === cols
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {cols}
+                  </button>
+                ))}
+              </div>
+              {/* Options desktop (2-8) */}
+              <div className="hidden md:flex items-center gap-0.5">
                 {[2, 3, 4, 5, 6, 7, 8].map((cols) => (
                   <button
                     key={cols}
                     onClick={() => setGridCols(cols)}
-                    className={`px-2 py-1 rounded text-xs transition-all ${
+                    className={`px-2.5 py-1 rounded text-xs transition-all ${
                       gridCols === cols
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -827,10 +834,7 @@ export default function ListDetail() {
                         album={listAlbum.album}
                         position={index}
                         onRemove={handleRemoveAlbum}
-                        showArtist={showArtist}
-                        showTitle={showTitle}
-                        showYear={showYear}
-                        showRank={showRank}
+                        showRank={list.isRanked !== false}
                         isOwner={isOwner}
                       />
                     ))}
@@ -844,6 +848,7 @@ export default function ListDetail() {
                         album={listAlbum.album}
                         position={index}
                         onRemove={isOwner ? handleRemoveAlbum : () => {}}
+                        showRank={list.isRanked !== false}
                       />
                     ))}
                   </>
