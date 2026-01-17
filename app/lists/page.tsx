@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
 import { Plus, Calendar, Lock, Globe, Upload, Pencil, Trash2 } from 'lucide-react'
 
@@ -50,7 +51,7 @@ export default function Lists() {
     }
   }, [status])
 
-  const fetchLists = async () => {
+  const fetchLists = useCallback(async () => {
     try {
       const response = await fetch('/api/lists')
       if (response.ok) {
@@ -62,13 +63,13 @@ export default function Lists() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  const handleDeleteClick = (id: string, title: string) => {
+  const handleDeleteClick = useCallback((id: string, title: string) => {
     setDeleteConfirm({ id, title })
-  }
+  }, [])
 
-  const confirmDelete = async () => {
+  const confirmDelete = useCallback(async () => {
     if (!deleteConfirm) return
 
     try {
@@ -100,9 +101,9 @@ export default function Lists() {
     } finally {
       setDeleteConfirm(null)
     }
-  }
+  }, [deleteConfirm, lists])
 
-  const handleImportFull = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFull = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -149,7 +150,7 @@ export default function Lists() {
       setIsImporting(false)
       event.target.value = ''
     }
-  }
+  }, [fetchLists, router])
 
   if (status === 'loading' || isLoading) {
     return (
@@ -263,10 +264,13 @@ export default function Lists() {
                         <div className="absolute inset-0 p-2 flex items-center justify-center">
                           <div className="h-full aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105">
                             {list.listAlbums[0].album.coverImage ? (
-                              <img
+                              <Image
                                 src={list.listAlbums[0].album.coverImage}
                                 alt={list.listAlbums[0].album.title}
+                                width={130}
+                                height={130}
                                 className="h-full w-full object-cover"
+                                loading="lazy"
                               />
                             ) : (
                               <div className="h-full w-full flex items-center justify-center text-4xl text-gray-400">
@@ -284,10 +288,13 @@ export default function Lists() {
                               className="flex-1 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105"
                             >
                               {listAlbum.album.coverImage ? (
-                                <img
+                                <Image
                                   src={listAlbum.album.coverImage}
                                   alt={listAlbum.album.title}
+                                  width={130}
+                                  height={130}
                                   className="h-full w-full object-cover"
+                                  loading="lazy"
                                 />
                               ) : (
                                 <div className="h-full w-full flex items-center justify-center text-3xl text-gray-400">
@@ -303,10 +310,13 @@ export default function Lists() {
                           {/* Premier album - grand format à gauche */}
                           <div className="w-2/5 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105">
                             {list.listAlbums[0].album.coverImage ? (
-                              <img
+                              <Image
                                 src={list.listAlbums[0].album.coverImage}
                                 alt={list.listAlbums[0].album.title}
+                                width={130}
+                                height={130}
                                 className="h-full w-full object-cover"
+                                loading="lazy"
                               />
                             ) : (
                               <div className="h-full w-full flex items-center justify-center text-3xl text-gray-400">
@@ -323,10 +333,13 @@ export default function Lists() {
                                 className="flex-1 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105"
                               >
                                 {list.listAlbums[idx]?.album.coverImage ? (
-                                  <img
+                                  <Image
                                     src={list.listAlbums[idx].album.coverImage}
                                     alt={list.listAlbums[idx]?.album.title}
+                                    width={80}
+                                    height={60}
                                     className="h-full w-full object-cover"
+                                    loading="lazy"
                                   />
                                 ) : (
                                   <div className="h-full w-full flex items-center justify-center text-xl text-gray-400">
