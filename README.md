@@ -68,7 +68,30 @@ Rang,Artiste,Titre,Année,DiscogsId
 - **DiscogsId** (optionnel) : ID master ou release Discogs
 - Sans ID : recherche automatique artiste + titre
 - Avec ID : récupération directe depuis Discogs
+## 🧪 Tests
 
+Le projet utilise Jest et React Testing Library pour les tests.
+
+### Lancer les tests
+
+```bash
+# Tous les tests
+npm test
+
+# Mode watch
+npm test:watch
+
+# Avec coverage
+npm test:coverage
+```
+
+### Tests disponibles
+
+- ✅ **Fonctions utilitaires Discogs** - Extraction et nettoyage des données
+- ✅ **Gestion des périodes** - Parsing et formatage
+- 🔄 Tests de composants et API à venir
+
+Voir [__tests__/README.md](__tests__/README.md) pour plus de détails.
 ## �📋 Prérequis
 
 - Node.js 18+ 

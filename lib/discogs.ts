@@ -338,21 +338,19 @@ export async function getAlbumDetails(albumId: string, prisma: any): Promise<Dis
 }
 
 // Fonction utilitaire pour extraire l'artiste du titre formaté "Artiste - Album"
-function extractArtistFromTitle(title: string): string {
+export function extractArtistFromTitle(title: string): string {
   const parts = title.split(' - ')
   return parts.length > 1 ? parts[0] : 'Unknown Artist'
 }
 
 // Fonction utilitaire pour extraire le titre de l'album du format "Artiste - Album"
-function extractAlbumTitle(title: string): string {
+export function extractAlbumTitle(title: string): string {
   const parts = title.split(' - ')
   return parts.length > 1 ? parts.slice(1).join(' - ') : title
 }
 
 // Fonction utilitaire pour nettoyer le nom d'artiste (retirer le numéro entre parenthèses)
-function cleanArtistName(artist: string): string {
+export function cleanArtistName(artist: string): string {
   // Retire le numéro entre parenthèses à la fin (ex: "Mike Davis (2)" -> "Mike Davis")
   return artist.replace(/\s*\(\d+\)\s*$/, '').trim()
 }
-
-export { cleanArtistName }
