@@ -65,7 +65,7 @@ export default function ListDetail() {
   const [showTitle, setShowTitle] = useState(true)
   const [showYear, setShowYear] = useState(true)
   const [showRank, setShowRank] = useState(true)
-  const [gridCols, setGridCols] = useState(3)
+  const [gridCols, setGridCols] = useState(typeof window !== 'undefined' && window.innerWidth >= 768 ? 5 : 3)
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string, details?: string[] } | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const [importProgress, setImportProgress] = useState<string>('')
@@ -81,6 +81,23 @@ export default function ListDetail() {
       coordinateGetter: sortableKeyboardCoordinates
     })
   )
+
+  useEffect(() => {
+    // Définir le nombre de colonnes en fonction de la taille d'écran
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768
+      setGridCols(prev => {
+        // Si l'utilisateur n'a pas modifié manuellement, ajuster selon l'écran
+        if (isMobile && prev > 4) return 3
+        if (!isMobile && prev < 5) return 5
+        return prev
+      })
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     // Charger la liste dès que le composant est monté, avec ou sans session
