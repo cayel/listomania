@@ -65,7 +65,7 @@ export default function ListDetail() {
   const [showTitle, setShowTitle] = useState(true)
   const [showYear, setShowYear] = useState(true)
   const [showRank, setShowRank] = useState(true)
-  const [gridCols, setGridCols] = useState(5)
+  const [gridCols, setGridCols] = useState(3)
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string, details?: string[] } | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const [importProgress, setImportProgress] = useState<string>('')
@@ -565,14 +565,14 @@ export default function ListDetail() {
 
         {/* Header compact avec actions sticky */}
         <div className="glass rounded-xl p-5 mb-6 sticky top-16 z-30 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Titre et metadata */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
                   {list.title}
                 </h1>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-wrap">
                   {list.isPublic ? (
                     <div className="inline-flex items-center px-2 py-0.5 bg-green-100 dark:bg-green-900/30 rounded text-xs font-medium text-green-700 dark:text-green-400">
                       <Globe className="h-3 w-3 mr-1" />
@@ -609,7 +609,7 @@ export default function ListDetail() {
 
             {/* Actions compactes */}
             {isOwner && (
-              <div className="ml-4 flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => setShowShareModal(true)}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
