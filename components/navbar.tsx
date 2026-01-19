@@ -3,7 +3,7 @@
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { ThemeToggle } from './theme-toggle'
-import { LogOut, ListMusic, User, Shield, Menu, X } from 'lucide-react'
+import { LogOut, ListMusic, User, Shield, Menu, X, Compass } from 'lucide-react'
 import { useState } from 'react'
 
 export function Navbar() {
@@ -34,6 +34,12 @@ export function Navbar() {
                   className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   Mes Listes
+                </Link>
+                <Link
+                  href="/explore"
+                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Communauté
                 </Link>
                 {session.user?.role === 'admin' && (
                   <Link
@@ -139,6 +145,13 @@ export function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Mes Listes
+                </Link>
+                <Link
+                  href="/explore"
+                  className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Communauté
                 </Link>
                 {session.user?.role === 'admin' && (
                   <Link
