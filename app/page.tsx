@@ -1,10 +1,18 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/navbar'
 import { Music, List, Share2, TrendingUp, Sparkles } from 'lucide-react'
+import { generateWebsiteStructuredData } from '@/lib/structured-data'
 
 export default function Home() {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const structuredData = generateWebsiteStructuredData(baseUrl)
+
   return (
     <div className="min-h-screen gradient-bg">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
