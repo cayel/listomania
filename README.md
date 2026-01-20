@@ -18,7 +18,8 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - 📱 Interface responsive
 - 📥 Import/Export CSV (albums uniquement)
 - 📦 Import/Export JSON (liste complète avec métadonnées)
-- 🔖 URL de source pour listes importées
+- �️ Export d'images PNG (mosaïque d'albums avec 3 styles visuels)
+- �🔖 URL de source pour listes importées
 - 🎵 Priorité aux masters Discogs (avec fallback sur releases)
 
 ## 🛠️ Stack Technique
@@ -29,6 +30,7 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - **Authentification**: NextAuth.js v4
 - **UI**: Tailwind CSS v3
 - **Drag & Drop**: @dnd-kit
+- **Export Image**: html2canvas
 - **API externe**: Discogs API
 - **Validation**: Zod
 
@@ -89,6 +91,7 @@ npm test:coverage
 
 - ✅ **Fonctions utilitaires Discogs** - Extraction et nettoyage des données
 - ✅ **Gestion des périodes** - Parsing et formatage
+- ✅ **Export d'images** - Modal, options, styles et génération PNG
 - 🔄 Tests de composants et API à venir
 
 Voir [__tests__/README.md](__tests__/README.md) pour plus de détails.
@@ -223,6 +226,8 @@ ranklist/
 │   │   │       └── generate-share-token/ # Génération token
 │   │   ├── search/            # Recherche Discogs
 │   │   ├── public/            # Listes publiques
+│   │   ├── upload/            # Upload avatar
+│   │   ├── proxy-image/       # Proxy pour images Discogs (export PNG)
 │   │   └── user/              # Profil utilisateur
 │   ├── auth/                  # Pages signin/signup
 │   ├── admin/                 # Page administration (admin uniquement)
@@ -301,6 +306,14 @@ ranklist/
 **Export :**
 - **Albums uniquement (CSV)** : Format simple `Rank,Artist,Title,Year,DiscogsId`
 - **Liste complète (JSON)** : Inclut titre, description, période, sourceUrl + albums complets
+- **Image PNG** : Exporte la mosaïque d'albums en image haute résolution
+  - 🎨 **3 styles visuels** :
+    - 🖼️ **Cadre doré** : style peinture d'artiste avec bordure dorée et ombres
+    - ☁️ **Fond clair** : arrière-plan minimaliste blanc cassé (#FAFAFA)
+    - 🌙 **Fond noir** : style élégant sur fond sombre (#1a1a1a)
+  - ✏️ **Option texte** : inclure ou masquer les informations (rang, artiste, titre)
+  - 📐 **Haute qualité** : export en scale x2 pour une netteté optimale
+  - 🔒 **Gestion CORS** : proxy serveur pour les images Discogs externes
 
 **Import :**
 - **CSV** : Ajouter des albums à une liste existante
