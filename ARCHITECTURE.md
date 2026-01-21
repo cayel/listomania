@@ -98,6 +98,7 @@ ListAlbum (table de liaison)
 │       └── /generate-share-token (POST)
 ├── /search?q=xxx (GET)
 ├── /public/lists (GET)
+├── /albums/[id]/discogs-details (GET) - Détails Discogs complets
 └── /user/profile (GET, PATCH)
 ```
 
@@ -169,6 +170,29 @@ ListAlbum (table de liaison)
   ```
 - Usage : Backup complet avec métadonnées
 
+**PNG (Image mosaïque)**
+- Génération côté client avec html2canvas
+- 3 styles visuels disponibles :
+  - Cadre doré : style galerie avec bordure dorée
+  - Fond clair : arrière-plan minimaliste (#FAFAFA)
+  - Fond noir : style élégant sur fond sombre (#1a1a1a)
+- Options : inclure/masquer le texte (rang, artiste, titre)
+- Export en haute résolution (scale x2)
+- Proxy serveur pour contourner les restrictions CORS sur images Discogs
+
+**Playlist M3U8 (Universelle)**
+- Route : `GET /api/lists/[id]/export-playlist?format=m3u8`
+- Format standard compatible avec la plupart des lecteurs
+- Inclut métadonnées : artiste, titre, durée
+- Récupération automatique des tracklists via Discogs
+- Usage : Import dans Soundiiz, TuneMyMusic, FreeYourMusic
+
+**Playlist CSV (Avec tracklist)**
+- Route : `GET /api/lists/[id]/export-playlist?format=csv`
+- Format tabulaire détaillé
+- Colonnes : Position, Artist, Album, Year, Track Position, Track Title, Duration
+- Usage : Analyse ou import personnalisé
+
 ### Import
 
 **CSV (Ajouter albums)**
@@ -188,9 +212,17 @@ ListAlbum (table de liaison)
 
 ### API Endpoints utilisés
 
-- `GET /database/search` : Recherche d'albums
-- `GET /masters/{id}` : Détails d'un album master
-- `GET /releases/{id}` : Détails d'une release spécifique
+- `GET /database/search` : Recherche d'albums (masters + releases)
+- `GET /masters/{id}` : Détails d'un album master (avec tracklist)
+- `GET /releases/{id}` : Détails d'une release spécifique (avec tracklist et labels)
+
+### Optimisations
+
+**Recherche unique** : Une seule requête API pour récupérer masters ET releases, puis déduplication intelligente côté client.
+
+**Déduplication** : Algorithme basé sur artiste + titre normalisés, avec priorité aux masters.
+
+**Recherche manuelle** : Déclenchée par bouton ou touche Entrée pour réduire la charge API.
 
 ### Gestion des homonymes
 
@@ -259,9 +291,36 @@ npm run build
 - [ ] Connexion DB testée
 - [ ] Token Discogs valide
 
-## Tests (à implémenter)
+## Tests
 
-### Tests suggérés
+### Coverage actuel
+
+**Tests unitaires** (Jest + React Testing Library)
+- ✅ `lib/__tests__/discogs-api.test.ts` (13 tests) - Extraction, déduplication, nettoyage
+- ✅ `lib/__tests__/discogs-tracklist.test.ts` (5 tests) - Récupération tracklists
+- ✅ `lib/__tests__/periods.test.ts` - Gestion des périodes
+- ✅ `lib/__tests__/export-image.test.ts` (17 tests) - Export PNG
+- ✅ `components/__tests__/album-search.test.tsx` (17 tests) - Recherche manuelle
+- ✅ `components/__tests__/album-details-modal.test.tsx` (23 tests) - Modal détails
+- **Total : 75+ tests**
+
+### Commandes
+
+```bash
+# Tous les tests
+npm test
+
+# Mode watch
+npm test -- --watch
+
+# Avec coverage
+npm test -- --coverage
+
+# Test spécifique
+npm test -- discogs
+```
+
+### Tests recommandés à ajouter
 - Unit tests : fonctions utils
 - Integration tests : API routes
 - E2E tests : flows critiques (auth, création liste)
@@ -273,6 +332,14 @@ npm run build
 
 ## Changements récents (Janvier 2026)
 
+### Fonctionnalités majeures
+- ✅ **Export PNG** : Mosaïques d'albums avec 3 styles visuels
+- ✅ **Modal détails Discogs** : Consultation complète (type, labels, genres, styles, pays)
+- ✅ **Recherche optimisée** : Requête unique, déduplication intelligente, recherche manuelle
+- ✅ **Export playlists** : Formats M3U8 et CSV avec tracklists complètes
+- ✅ **Import playlists** : Compatible avec Soundiiz, TuneMyMusic, FreeYourMusic
+
+### Infrastructure
 - ✅ Migration `middleware.ts` → `proxy.ts` (Next.js 16)
 - ✅ Export/Import JSON complet (avec métadonnées)
 - ✅ Partage sécurisé par token
@@ -280,6 +347,7 @@ npm run build
 - ✅ Refactoring structure (types/, lib/utils/, constants)
 - ✅ Système de rôles (user/admin)
 - ✅ Page d'administration avec gestion utilisateurs
+- ✅ Tests complets : 75+ tests passants
 
 ## Système d'administration
 
@@ -336,17 +404,32 @@ UPDATE "User" SET role = 'admin' WHERE email = 'votre@email.com';
 
 ### Court terme
 - [ ] Pagination listes (explore)
-- [ ] Recherche de listes
-- [ ] Filtres par période
+- [ ] Recherche de listes par titre/artiste
+- [ ] Filtres par période/genre
+- [ ] Optimisation export playlists (cache tracklists)
 
 ### Moyen terme
-- [ ] Statistiques utilisateur
+- [ ] Statistiques utilisateur avancées
+- [ ] Intégrations streaming directes (Spotify, Apple Music API)
 - [ ] Likes sur listes publiques
-- [ ] Commentaires
+- [ ] Commentaires et discussions
 - [ ] Tags personnalisés
+- [ ] Job background pour grandes playlists (50+ albums)
 
 ### Long terme
 - [ ] Recommandations basées IA
 - [ ] Collaboration sur listes
-- [ ] Export PDF/Image
+- [ ] Versions de listes (historique)
 - [ ] Mobile app (React Native)
+- [ ] Format XSPF (alternative M3U8)
+
+## Documentation
+
+### Fichiers disponibles
+
+- `README.md` - Guide utilisateur complet et installation
+- `ARCHITECTURE.md` - Ce fichier, documentation technique
+- `docs/PLAYLIST-EXPORT.md` - Guide export playlists vers streaming
+- `docs/PLAYLIST-FEATURE.md` - Documentation technique playlists
+- `docs/SEO-GUIDE.md` - Guide optimisation SEO (si applicable)
+- `__tests__/README.md` - Documentation des tests

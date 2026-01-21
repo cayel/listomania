@@ -304,14 +304,57 @@ export default function ListDetail() {
         a.download = `${list?.title || 'liste'}.csv`
         document.body.appendChild(a)
         a.click()
-        window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        setNotification({ type: 'success', message: 'Albums exportés avec succès !' })
+        window.URL.revokeObjectURL(url)
+        setShowExportMenu(false)
+        setNotification({ type: 'success', message: 'Export CSV réussi' })
+        setTimeout(() => setNotification(null), 3000)
+      } else {
+        setNotification({ type: 'error', message: 'Erreur lors de l\'export CSV' })
         setTimeout(() => setNotification(null), 3000)
       }
     } catch (error) {
-      console.error('Erreur lors de l\'export:', error)
-      setNotification({ type: 'error', message: 'Erreur lors de l\'export' })
+      console.error('Erreur:', error)
+      setNotification({ type: 'error', message: 'Erreur lors de l\'export CSV' })
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }
+
+  const handleExportPlaylist = async (format: 'm3u8' | 'csv') => {
+    try {
+      setShowExportMenu(false)
+      setNotification({ type: 'success', message: 'Génération de la playlist en cours...' })
+      
+      const response = await fetch(`/api/lists/${params.id}/export-playlist?format=${format}`)
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        const extension = format === 'm3u8' ? 'm3u8' : 'csv'
+        a.download = `${list?.title || 'playlist'}_playlist.${extension}`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        
+        setNotification({ 
+          type: 'success', 
+          message: `Playlist ${format.toUpperCase()} exportée avec succès` 
+        })
+        setTimeout(() => setNotification(null), 3000)
+      } else {
+        const errorData = await response.json()
+        setNotification({ 
+          type: 'error', 
+          message: errorData.error || 'Erreur lors de l\'export de la playlist' 
+        })
+        setTimeout(() => setNotification(null), 5000)
+      }
+    } catch (error) {
+      console.error('Erreur:', error)
+      setNotification({ type: 'error', message: 'Erreur lors de l\'export de la playlist' })
       setTimeout(() => setNotification(null), 3000)
     }
   }
@@ -904,12 +947,34 @@ export default function ListDetail() {
                         setShowExportMenu(false)
                       }}
                       disabled={isImporting || isExportingImage || viewMode !== 'grid'}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-b-lg flex items-center gap-2 disabled:opacity-50"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50"
                     >
                       <ImageIcon className="h-4 w-4" />
                       <div>
                         <div className="font-medium text-xs">Image PNG</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">Mosaïque de pochettes</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleExportPlaylist('m3u8')}
+                      disabled={isImporting}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Download className="h-4 w-4" />
+                      <div>
+                        <div className="font-medium text-xs">Playlist M3U8</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Format universel</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleExportPlaylist('csv')}
+                      disabled={isImporting}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-b-lg flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Download className="h-4 w-4" />
+                      <div>
+                        <div className="font-medium text-xs">Playlist CSV</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Avec tracklist complète</div>
                       </div>
                     </button>
                     </div>

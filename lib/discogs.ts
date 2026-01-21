@@ -19,6 +19,16 @@ export interface DiscogsAlbumDetails extends DiscogsAlbum {
   resourceUrl: string
 }
 
+export interface DiscogsTrack {
+  position: string
+  title: string
+  duration: string
+}
+
+export interface DiscogsAlbumWithTracks extends DiscogsAlbumDetails {
+  tracklist: DiscogsTrack[]
+}
+
 export interface DiscogsSearchResult {
   id: number
   title: string
@@ -458,6 +468,81 @@ export function extractArtistFromTitle(title: string): string {
 export function extractAlbumTitle(title: string): string {
   const parts = title.split(' - ')
   return parts.length > 1 ? parts.slice(1).join(' - ') : title
+}
+
+/**
+ * Récupère les détails complets d'un album avec sa tracklist
+ */
+export async function getDiscogsAlbumWithTracks(discogsId: string, type: 'master' | 'release'): Promise<DiscogsAlbumWithTracks> {
+  const DISCOGS_TOKEN = process.env.DISCOGS_TOKEN
+  
+  if (!DISCOGS_TOKEN) {
+    throw new Error('DISCOGS_TOKEN n\'est pas défini dans les variables d\'environnement')
+  }
+
+  try {
+    const endpoint = type === 'master' 
+      ? `https://api.discogs.com/masters/${discogsId}`
+      : `https://api.discogs.com/releases/${discogsId}`
+    
+    const response = await fetchWithRetry(
+      endpoint,
+      {
+        headers: {
+          'Authorization': `Discogs token=${DISCOGS_TOKEN}`,
+          'User-Agent': 'ListOmania/1.0'
+        },
+        next: { revalidate: 86400 } // Cache pour 24 heures
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Erreur Discogs API: ${response.status}`)
+    }
+
+    const data = await response.json()
+    
+    const artistName = data.artists?.[0]?.name || extractArtistFromTitle(data.title)
+    
+    // Extraire les labels (pour releases uniquement)
+    const labels = type === 'release' && data.labels
+      ? data.labels.map((l: any) => l.name).filter(Boolean)
+      : []
+    
+    // Extraire le format (pour releases uniquement)  
+    const format = type === 'release' && data.formats?.[0]
+      ? `${data.formats[0].name}${data.formats[0].descriptions ? ` (${data.formats[0].descriptions.join(', ')})` : ''}`
+      : undefined
+    
+    // Extraire la tracklist
+    const tracklist: DiscogsTrack[] = (data.tracklist || []).map((track: any) => ({
+      position: track.position || '',
+      title: track.title || '',
+      duration: track.duration || ''
+    }))
+    
+    return {
+      id: data.id.toString(),
+      title: data.title,
+      artist: cleanArtistName(artistName),
+      discogsArtistId: data.artists?.[0]?.id?.toString(),
+      year: data.year,
+      coverImage: data.images?.[0]?.uri || data.thumb,
+      thumb: data.thumb,
+      type,
+      labels,
+      genres: data.genres || [],
+      styles: data.styles || [],
+      country: type === 'release' ? data.country : undefined,
+      format,
+      discogsUrl: data.uri,
+      resourceUrl: data.resource_url,
+      tracklist
+    }
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'album avec tracklist:', error)
+    throw error
+  }
 }
 
 // Fonction utilitaire pour nettoyer le nom d'artiste (retirer le numéro entre parenthèses)

@@ -1,5 +1,15 @@
 # Ranklist - Gestion de listes d'albums musicaux
 
+> 🎵 **Application web moderne pour créer, organiser et partager vos classements d'albums musicaux avec intégration Discogs.**
+
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-75%2B%20passing-brightgreen.svg)](__tests__/README.md)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+**[🚀 Démarrage rapide](#-installation)** | **[📖 Documentation](docs/README.md)** | **[🏗️ Architecture](ARCHITECTURE.md)** | **[📝 Changelog](CHANGELOG.md)**
+
+---
+
 Application web moderne pour créer, organiser et partager vos classements d'albums musicaux avec intégration Discogs.
 
 ## ✨ Fonctionnalités
@@ -18,8 +28,7 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - 📱 Interface responsive
 - 📥 Import/Export CSV (albums uniquement)
 - 📦 Import/Export JSON (liste complète avec métadonnées)
-- �️ Export d'images PNG (mosaïque d'albums avec 3 styles visuels)
-- �🔖 URL de source pour listes importées
+- �️ Export d'images PNG (mosaïque d'albums avec 3 styles visuels)- 🎵 Export de playlists universelles (M3U8 et CSV avec tracklists)- �🔖 URL de source pour listes importées
 - 🎵 Priorité aux masters Discogs (avec fallback sur releases)- ℹ️ Consultation détails Discogs (type, labels, genres, styles, pays)
 - 🔍 Recherche manuelle optimisée (bouton + Enter, déduplication intelligente)
 ## 🛠️ Stack Technique
@@ -324,6 +333,20 @@ ranklist/
 3. Copier le lien (fonctionne même si liste privée)
 4. Partager avec qui vous voulez
 
+### Exporter en playlist pour streaming
+1. Ouvrir une liste
+2. Cliquer sur "Exporter" puis choisir :
+   - **Playlist M3U8** : Format universel pour lecteurs audio
+   - **Playlist CSV** : Tracklist détaillée avec toutes les pistes
+3. Le fichier téléchargé contient tous les morceaux de tous les albums
+4. Importer dans votre service préféré :
+   - **Soundiiz** (soundiiz.com) - Supporte Spotify, Apple Music, Deezer, YouTube Music, etc.
+   - **TuneMyMusic** (tunemymusic.com) - Transfert entre plateformes
+   - **FreeYourMusic** (freeyourmusic.com) - App desktop pour conversions
+   - Ou directement dans votre lecteur compatible M3U8
+
+**Note** : La conversion de playlists d'albums vers des services de streaming peut nécessiter une recherche manuelle pour certains albums rares ou introuvables sur les plateformes.
+
 ### Import/Export
 
 **Export :**
@@ -337,6 +360,11 @@ ranklist/
   - ✏️ **Option texte** : inclure ou masquer les informations (rang, artiste, titre)
   - 📐 **Haute qualité** : export en scale x2 pour une netteté optimale
   - 🔒 **Gestion CORS** : proxy serveur pour les images Discogs externes
+- **Playlist universelle** :
+  - 🎵 **Format M3U8** : Playlist au format standard compatible avec la plupart des lecteurs et services
+  - 📊 **Format CSV** : Tracklist complète avec Position, Artiste, Album, Année, Piste, Titre, Durée
+  - 📀 **Tracklists complètes** : récupération automatique de tous les morceaux via Discogs
+  - 🔄 **Import facile** : utilisez des outils comme Soundiiz, TuneMyMusic ou FreeYourMusic pour importer dans Spotify, Apple Music, Deezer, etc.
 
 **Import :**
 - **CSV** : Ajouter des albums à une liste existante
@@ -395,6 +423,15 @@ Les contributions sont bienvenues ! N'hésitez pas à ouvrir une issue ou une pu
 ## 📝 Licence
 
 MIT
+
+## 📚 Documentation
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Documentation technique complète
+- **[CHANGELOG.md](CHANGELOG.md)** - Historique des versions et modifications
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guide de contribution pour développeurs
+- **[docs/PLAYLIST-EXPORT.md](docs/PLAYLIST-EXPORT.md)** - Guide export playlists vers streaming
+- **[docs/PLAYLIST-FEATURE.md](docs/PLAYLIST-FEATURE.md)** - Documentation technique playlists
+- **[__tests__/README.md](__tests__/README.md)** - Documentation des tests
 
 ---
 
