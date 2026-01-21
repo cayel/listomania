@@ -8,6 +8,17 @@ export interface DiscogsAlbum {
   thumb?: string
 }
 
+export interface DiscogsAlbumDetails extends DiscogsAlbum {
+  type: 'master' | 'release'
+  labels?: string[]
+  genres?: string[]
+  styles?: string[]
+  country?: string
+  format?: string
+  discogsUrl: string
+  resourceUrl: string
+}
+
 export interface DiscogsSearchResult {
   id: number
   title: string
@@ -275,6 +286,70 @@ export async function getDiscogsAlbumDetails(discogsId: string): Promise<Discogs
     }
   } catch (error) {
     console.error('Erreur lors de la récupération des détails Discogs:', error)
+    throw error
+  }
+}
+
+export async function getDiscogsAlbumFullDetails(discogsId: string, type: 'master' | 'release'): Promise<DiscogsAlbumDetails> {
+  const DISCOGS_TOKEN = process.env.DISCOGS_TOKEN
+  
+  if (!DISCOGS_TOKEN) {
+    throw new Error('DISCOGS_TOKEN n\'est pas défini dans les variables d\'environnement')
+  }
+
+  try {
+    const endpoint = type === 'master' 
+      ? `https://api.discogs.com/masters/${discogsId}`
+      : `https://api.discogs.com/releases/${discogsId}`
+    
+    const response = await fetchWithRetry(
+      endpoint,
+      {
+        headers: {
+          'Authorization': `Discogs token=${DISCOGS_TOKEN}`,
+          'User-Agent': 'ListOmania/1.0'
+        },
+        next: { revalidate: 86400 } // Cache pour 24 heures
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Erreur Discogs API: ${response.status}`)
+    }
+
+    const data = await response.json()
+    
+    const artistName = data.artists?.[0]?.name || extractArtistFromTitle(data.title)
+    
+    // Extraire les labels (pour releases uniquement)
+    const labels = type === 'release' && data.labels
+      ? data.labels.map((l: any) => l.name).filter(Boolean)
+      : []
+    
+    // Extraire le format (pour releases uniquement)  
+    const format = type === 'release' && data.formats?.[0]
+      ? `${data.formats[0].name}${data.formats[0].descriptions ? ` (${data.formats[0].descriptions.join(', ')})` : ''}`
+      : undefined
+    
+    return {
+      id: data.id.toString(),
+      title: data.title,
+      artist: cleanArtistName(artistName),
+      discogsArtistId: data.artists?.[0]?.id?.toString(),
+      year: data.year,
+      coverImage: data.images?.[0]?.uri || data.thumb,
+      thumb: data.thumb,
+      type,
+      labels,
+      genres: data.genres || [],
+      styles: data.styles || [],
+      country: type === 'release' ? data.country : undefined,
+      format,
+      discogsUrl: data.uri,
+      resourceUrl: data.resource_url
+    }
+  } catch (error) {
+    console.error('Erreur lors de la récupération des détails complets Discogs:', error)
     throw error
   }
 }

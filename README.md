@@ -20,8 +20,8 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - 📦 Import/Export JSON (liste complète avec métadonnées)
 - �️ Export d'images PNG (mosaïque d'albums avec 3 styles visuels)
 - �🔖 URL de source pour listes importées
-- 🎵 Priorité aux masters Discogs (avec fallback sur releases)
-
+- 🎵 Priorité aux masters Discogs (avec fallback sur releases)- ℹ️ Consultation détails Discogs (type, labels, genres, styles, pays)
+- 🔍 Recherche manuelle optimisée (bouton + Enter, déduplication intelligente)
 ## 🛠️ Stack Technique
 
 - **Framework**: Next.js 16.1.1 (App Router + Turbopack)
@@ -41,21 +41,28 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 L'application utilise une stratégie intelligente pour rechercher et importer des albums :
 
 1. **Recherche par artiste + titre**
-   - Recherche d'abord dans les **masters** Discogs (versions canoniques des albums)
-   - Si aucun master trouvé, recherche dans les **releases** (versions physiques spécifiques)
-   - Fallback sur recherche générale si nécessaire
+   - **Requête unique optimisée** : recherche simultanée de masters ET releases
+   - **Déduplication intelligente** : suppression des doublons par artiste + titre
+   - **Priorité masters** : si un album existe en master et release, seul le master est affiché
+   - **Recherche manuelle** : déclenchée par bouton ou touche Entrée (réduit la charge API)
 
-2. **Import CSV avec ID Discogs**
+2. **Consultation des détails**
+   - Bouton Info (ℹ️) sur chaque album pour afficher un modal complet
+   - Affiche : type (Master/Release), artiste, titre, année, pays, labels, genres, styles
+   - Lien direct vers la page Discogs
+   - Interface compacte sans scrollbar
+
+3. **Import CSV avec ID Discogs**
    - Tentative en tant que master en priorité
    - Si échec (404), tentative en tant que release
    - Enregistrement du type (master/release) en base de données
 
-3. **Rate limiting**
+4. **Rate limiting**
    - Respect strict de la limite Discogs (60 requêtes/minute)
    - Délai de 1.1s entre chaque requête
    - Retry automatique avec backoff exponentiel en cas de 429
 
-4. **Gestion des artistes homonymes**
+5. **Gestion des artistes homonymes**
    - Stockage de `discogsArtistId` pour différencier les artistes
    - Permet de gérer correctement les homonymes
 
@@ -89,10 +96,12 @@ npm test:coverage
 
 ### Tests disponibles
 
-- ✅ **Fonctions utilitaires Discogs** - Extraction et nettoyage des données
+- ✅ **Fonctions utilitaires Discogs** (13 tests) - Extraction, déduplication, nettoyage
 - ✅ **Gestion des périodes** - Parsing et formatage
 - ✅ **Export d'images** - Modal, options, styles et génération PNG
-- 🔄 Tests de composants et API à venir
+- ✅ **Recherche d'albums** (17 tests) - Recherche manuelle, fermeture résultats, états
+- ✅ **Modal de détails** (23 tests) - Affichage, API, erreurs, interactions
+- ✅ **Couverture complète** - 53+ tests avec mocks et intégrations
 
 Voir [__tests__/README.md](__tests__/README.md) pour plus de détails.
 ## �📋 Prérequis
@@ -219,6 +228,8 @@ ranklist/
 │   │   │   ├── import-full/   # Import liste complète (JSON)
 │   │   │   └── [id]/          # Routes dynamiques
 │   │   │       ├── albums/    # Gestion albums
+│   │   │       │   └── [albumId]/
+│   │   │       │       └── discogs-details/ # Détails Discogs complets
 │   │   │       ├── export/    # Export CSV
 │   │   │       ├── export-full/ # Export JSON complet
 │   │   │       ├── import/    # Import CSV
@@ -243,8 +254,9 @@ ranklist/
 ├── components/                # Composants React réutilisables
 │   ├── navbar.tsx             # Navigation principale
 │   ├── theme-toggle.tsx       # Bouton thème clair/sombre
-│   ├── album-search.tsx       # Recherche d'albums
-│   ├── album-grid-item.tsx    # Affichage album (grille)
+│   ├── album-search.tsx       # Recherche d'albums (manuelle + déduplication)
+│   ├── album-grid-item.tsx    # Affichage album (grille) avec bouton Info
+│   ├── album-details-modal.tsx # Modal détails Discogs complets
 │   ├── sortable-album-item.tsx # Album draggable
 │   ├── period-selector.tsx    # Sélecteur de période
 │   └── providers.tsx          # Context providers (NextAuth, Theme)
@@ -294,6 +306,17 @@ ranklist/
 ### Réorganiser
 - Glisser-déposer les albums dans l'ordre souhaité
 - Sauvegarde automatique de la position
+
+### Consulter les détails Discogs
+1. Cliquer sur le bouton ℹ️ Info sur un album
+2. Modal affichant les informations complètes :
+   - Type (Master ou Release)
+   - Artiste et titre
+   - Année de sortie et pays
+   - Labels et catalogue
+   - Genres et styles musicaux
+3. Lien direct vers la page Discogs pour plus d'infos
+4. Fermeture : bouton X, clic à l'extérieur, ou touche Échap
 
 ### Partager
 1. Cliquer sur "Partager" dans une liste

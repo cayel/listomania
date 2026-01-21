@@ -7,6 +7,7 @@ import { Navbar } from '@/components/navbar'
 import { AlbumSearch } from '@/components/album-search'
 import { SortableAlbumItem } from '@/components/sortable-album-item'
 import { AlbumGridItem } from '@/components/album-grid-item'
+import { AlbumDetailsModal } from '@/components/album-details-modal'
 import {
   DndContext,
   closestCenter,
@@ -80,6 +81,7 @@ export default function ListDetail() {
   const [exportImageIncludeText, setExportImageIncludeText] = useState(true)
   const [exportImageStyle, setExportImageStyle] = useState<'golden' | 'light' | 'dark'>('golden')
   const [isExportingImage, setIsExportingImage] = useState(false)
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -747,6 +749,14 @@ export default function ListDetail() {
           </div>
         </div>
       )}
+
+      {/* Album Details Modal */}
+      {selectedAlbumId && (
+        <AlbumDetailsModal
+          albumId={selectedAlbumId}
+          onClose={() => setSelectedAlbumId(null)}
+        />
+      )}
       
       {/* Notification */}
       {notification && (
@@ -1089,6 +1099,7 @@ export default function ListDetail() {
                         album={listAlbum.album}
                         position={index}
                         onRemove={handleRemoveAlbum}
+                        onShowDetails={setSelectedAlbumId}
                         showRank={list.isRanked !== false}
                         isOwner={isOwner}
                       />

@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X } from 'lucide-react'
+import { GripVertical, X, Info } from 'lucide-react'
 import Image from 'next/image'
 
 interface Album {
@@ -19,6 +19,7 @@ interface AlbumGridItemProps {
   album: Album
   position: number
   onRemove: (listAlbumId: string, albumTitle?: string, artist?: string) => void
+  onShowDetails: (albumId: string) => void
   showRank: boolean
   isOwner: boolean
 }
@@ -28,6 +29,7 @@ export function AlbumGridItem({
   album,
   position,
   onRemove,
+  onShowDetails,
   showRank,
   isOwner
 }: AlbumGridItemProps) {
@@ -64,11 +66,20 @@ export function AlbumGridItem({
           <button
             {...attributes}
             {...listeners}
-            className="absolute top-2 right-12 z-10 p-1 bg-white/90 dark:bg-gray-800/90 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+            className="absolute top-2 right-20 z-10 p-1 bg-white/90 dark:bg-gray-800/90 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
             aria-label="Déplacer"
           >
             <GripVertical className="h-4 w-4 text-gray-600 dark:text-gray-400" />
           </button>
+          {!album.discogsId.startsWith('unknown-') && (
+            <button
+              onClick={() => onShowDetails(album.id)}
+              className="absolute top-2 right-12 z-10 p-1 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-all hover:scale-110 hover:shadow-lg shadow-blue-500/50"
+              aria-label="Informations"
+            >
+              <Info className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={() => onRemove(listAlbumId, album.title, album.artist)}
             className="absolute top-2 right-2 z-10 p-1 bg-red-500/90 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
