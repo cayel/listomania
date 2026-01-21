@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Search, X } from 'lucide-react'
 
 interface Album {
   id: string
@@ -21,9 +21,33 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
   const [results, setResults] = useState<Album[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const handleSearch = async (searchQuery: string) => {
-    if (searchQuery.length < 2) {
+  // Fermer les résultats en cliquant en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
+
+  const handleSearch = async () => {
+    if (query.length < 2) {
       setResults([])
       setIsOpen(false)
       return
@@ -33,7 +57,7 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
     setIsOpen(true)
 
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
       if (response.ok) {
         const data = await response.json()
         setResults(data)
@@ -52,27 +76,56 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
     setIsOpen(false)
   }
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSearch()
+    }
+  }
+
+  const handleClose = () => {
+    setIsOpen(false)
+  }
+
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            handleSearch(e.target.value)
-          }}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="Rechercher un album ou un artiste..."
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+          className="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
         />
+        <button
+          onClick={handleSearch}
+          disabled={isLoading || query.length < 2}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          title="Rechercher"
+        >
+          <Search className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+        </button>
       </div>
 
       {isOpen && (
         <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+          <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex justify-between items-center">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {isLoading ? 'Recherche en cours...' : `${results.length} résultat${results.length > 1 ? 's' : ''}`}
+            </span>
+            <button
+              onClick={handleClose}
+              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Fermer"
+            >
+              <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            </button>
+          </div>
+          
           {isLoading ? (
             <div className="p-4 text-center text-gray-600 dark:text-gray-400">
-              Recherche en cours...
+              Chargement...
             </div>
           ) : results.length === 0 ? (
             <div className="p-4 text-center text-gray-600 dark:text-gray-400">
