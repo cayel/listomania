@@ -71,8 +71,9 @@ export async function searchDiscogsAlbums(query: string): Promise<DiscogsAlbum[]
   }
 
   try {
+    // Recherche sans filtre de type pour obtenir masters ET releases en un seul appel
     const response = await fetchWithRetry(
-      `https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&type=master&per_page=20`,
+      `https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&per_page=30`,
       {
         headers: {
           'Authorization': `Discogs token=${DISCOGS_TOKEN}`,
@@ -88,14 +89,28 @@ export async function searchDiscogsAlbums(query: string): Promise<DiscogsAlbum[]
 
     const data = await response.json()
     
-    return data.results.map((result: DiscogsSearchResult) => ({
-      id: result.id.toString(),
-      title: extractAlbumTitle(result.title),
-      artist: extractArtistFromTitle(result.title),
-      year: result.year ? parseInt(result.year) : undefined,
-      coverImage: result.cover_image || result.thumb,
-      thumb: result.thumb
-    }))
+    // Filtrer pour garder seulement masters et releases, puis trier (masters en premier)
+    const albums = (data.results || [])
+      .filter((result: DiscogsSearchResult) => 
+        result.type === 'master' || result.type === 'release'
+      )
+      .sort((a: DiscogsSearchResult, b: DiscogsSearchResult) => {
+        // Masters en priorité
+        if (a.type === 'master' && b.type !== 'master') return -1
+        if (a.type !== 'master' && b.type === 'master') return 1
+        return 0
+      })
+      .slice(0, 20) // Limiter à 20 résultats
+      .map((result: DiscogsSearchResult) => ({
+        id: result.id.toString(),
+        title: extractAlbumTitle(result.title),
+        artist: extractArtistFromTitle(result.title),
+        year: result.year ? parseInt(result.year) : undefined,
+        coverImage: result.cover_image || result.thumb,
+        thumb: result.thumb
+      }))
+    
+    return albums
   } catch (error) {
     console.error('Erreur lors de la recherche Discogs:', error)
     throw error
