@@ -61,6 +61,103 @@ describe('Discogs API Functions', () => {
       )
     })
 
+    it('should deduplicate masters and releases, keeping masters', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          results: [
+            {
+              id: 12345,
+              title: 'Pink Floyd - The Dark Side of the Moon',
+              year: '1973',
+              thumb: 'https://example.com/thumb1.jpg',
+              cover_image: 'https://example.com/cover1.jpg',
+              type: 'master'
+            },
+            {
+              id: 67890,
+              title: 'Pink Floyd - The Dark Side Of The Moon',
+              year: '1973',
+              thumb: 'https://example.com/thumb2.jpg',
+              cover_image: 'https://example.com/cover2.jpg',
+              type: 'release'
+            },
+            {
+              id: 11111,
+              title: 'The Beatles - Abbey Road',
+              year: '1969',
+              thumb: 'https://example.com/thumb3.jpg',
+              cover_image: 'https://example.com/cover3.jpg',
+              type: 'release'
+            }
+          ]
+        })
+      }
+
+      ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+      const results = await searchDiscogsAlbums('classic rock')
+
+      // Devrait avoir seulement 2 résultats (le master Pink Floyd et la release Beatles)
+      expect(results).toHaveLength(2)
+      
+      // Le premier devrait être le master de Pink Floyd (pas la release)
+      expect(results[0]).toMatchObject({
+        id: '12345',
+        title: 'The Dark Side of the Moon',
+        artist: 'Pink Floyd'
+      })
+      
+      // Le second devrait être la release Beatles
+      expect(results[1]).toMatchObject({
+        id: '11111',
+        title: 'Abbey Road',
+        artist: 'The Beatles'
+      })
+    })
+
+    it('should filter out non-album types (artist, label, etc.)', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          results: [
+            {
+              id: 12345,
+              title: 'Pink Floyd - The Dark Side of the Moon',
+              year: '1973',
+              type: 'master'
+            },
+            {
+              id: 999,
+              title: 'Pink Floyd',
+              type: 'artist'
+            },
+            {
+              id: 888,
+              title: 'Capitol Records',
+              type: 'label'
+            },
+            {
+              id: 67890,
+              title: 'The Beatles - Abbey Road',
+              year: '1969',
+              type: 'release'
+            }
+          ]
+        })
+      }
+
+      ;(global.fetch as jest.Mock).mockResolvedValue(mockResponse)
+
+      const results = await searchDiscogsAlbums('music')
+
+      // Devrait avoir seulement 2 résultats (les types master et release)
+      expect(results).toHaveLength(2)
+      expect(results.every(r => r.id === '12345' || r.id === '67890')).toBe(true)
+    })
+
     it('should throw error when DISCOGS_TOKEN is not defined', async () => {
       delete process.env.DISCOGS_TOKEN
 

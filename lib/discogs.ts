@@ -90,7 +90,7 @@ export async function searchDiscogsAlbums(query: string): Promise<DiscogsAlbum[]
     const data = await response.json()
     
     // Filtrer pour garder seulement masters et releases, puis trier (masters en premier)
-    const albums = (data.results || [])
+    const filtered = (data.results || [])
       .filter((result: DiscogsSearchResult) => 
         result.type === 'master' || result.type === 'release'
       )
@@ -100,7 +100,28 @@ export async function searchDiscogsAlbums(query: string): Promise<DiscogsAlbum[]
         if (a.type !== 'master' && b.type === 'master') return 1
         return 0
       })
-      .slice(0, 20) // Limiter à 20 résultats
+    
+    // Dédupliquer par artiste + titre (garder master si dupliqué)
+    const seen = new Map<string, DiscogsSearchResult>()
+    
+    for (const result of filtered) {
+      const artist = extractArtistFromTitle(result.title).toLowerCase().trim()
+      const title = extractAlbumTitle(result.title).toLowerCase().trim()
+      const key = `${artist}|${title}`
+      
+      const existing = seen.get(key)
+      
+      // Garder ce résultat si :
+      // - Aucun résultat existant pour cette clé
+      // - OU le résultat existant est une release et celui-ci est un master
+      if (!existing || (existing.type === 'release' && result.type === 'master')) {
+        seen.set(key, result)
+      }
+    }
+    
+    // Convertir en albums et limiter à 20 résultats
+    const albums = Array.from(seen.values())
+      .slice(0, 20)
       .map((result: DiscogsSearchResult) => ({
         id: result.id.toString(),
         title: extractAlbumTitle(result.title),
