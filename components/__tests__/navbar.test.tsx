@@ -29,7 +29,8 @@ jest.mock('lucide-react', () => ({
   Shield: () => <div>Shield Icon</div>,
   Menu: () => <div>Menu Icon</div>,
   X: () => <div>X Icon</div>,
-  Compass: () => <div>Compass Icon</div>
+  Compass: () => <div>Compass Icon</div>,
+  BarChart3: () => <div>BarChart3 Icon</div>
 }))
 
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>

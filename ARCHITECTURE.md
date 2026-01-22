@@ -295,14 +295,17 @@ npm run build
 
 ### Coverage actuel
 
-**Tests unitaires** (Jest + React Testing Library)
+**Tests unitaires et d'intégration** (Jest + React Testing Library)
 - ✅ `lib/__tests__/discogs-api.test.ts` (13 tests) - Extraction, déduplication, nettoyage
 - ✅ `lib/__tests__/discogs-tracklist.test.ts` (5 tests) - Récupération tracklists
 - ✅ `lib/__tests__/periods.test.ts` - Gestion des périodes
-- ✅ `lib/__tests__/export-image.test.ts` (17 tests) - Export PNG
+- ✅ `app/lists/[id]/__tests__/export-image.test.ts` (17 tests) - Export PNG
 - ✅ `components/__tests__/album-search.test.tsx` (17 tests) - Recherche manuelle
 - ✅ `components/__tests__/album-details-modal.test.tsx` (23 tests) - Modal détails
-- **Total : 75+ tests**
+- ✅ `app/api/user/stats/__tests__/route.test.ts` (12 tests) - API statistiques
+- ✅ `app/stats/__tests__/page.test.tsx` (20 tests) - Page statistiques
+- ✅ Plus de tests de composants et pages
+- **Total : 200 tests**
 
 ### Commandes
 

@@ -3,7 +3,7 @@
 > 🎵 **Application web moderne pour créer, organiser et partager vos classements d'albums musicaux avec intégration Discogs.**
 
 [![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-75%2B%20passing-brightgreen.svg)](__tests__/README.md)
+[![Tests](https://img.shields.io/badge/tests-200%20passing-brightgreen.svg)](__tests__/README.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **[🚀 Démarrage rapide](#-installation)** | **[📖 Documentation](docs/README.md)** | **[🏗️ Architecture](ARCHITECTURE.md)** | **[📝 Changelog](CHANGELOG.md)**
@@ -28,9 +28,14 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - 📱 Interface responsive
 - 📥 Import/Export CSV (albums uniquement)
 - 📦 Import/Export JSON (liste complète avec métadonnées)
-- �️ Export d'images PNG (mosaïque d'albums avec 3 styles visuels)- 🎵 Export de playlists universelles (M3U8 et CSV avec tracklists)- �🔖 URL de source pour listes importées
-- 🎵 Priorité aux masters Discogs (avec fallback sur releases)- ℹ️ Consultation détails Discogs (type, labels, genres, styles, pays)
+- 🖼️ Export d'images PNG (mosaïque d'albums avec 3 styles visuels)
+- 🎵 Export de playlists universelles (M3U8 et CSV avec tracklists)
+- 🔖 URL de source pour listes importées
+- 🎵 Priorité aux masters Discogs (avec fallback sur releases)
+- ℹ️ Consultation détails Discogs (type, labels, genres, styles, pays)
 - 🔍 Recherche manuelle optimisée (bouton + Enter, déduplication intelligente)
+- 📊 Statistiques détaillées (albums par décennie, top artistes, albums favoris)
+
 ## 🛠️ Stack Technique
 
 - **Framework**: Next.js 16.1.1 (App Router + Turbopack)
@@ -326,6 +331,17 @@ ranklist/
    - Genres et styles musicaux
 3. Lien direct vers la page Discogs pour plus d'infos
 4. Fermeture : bouton X, clic à l'extérieur, ou touche Échap
+
+### Consulter les statistiques
+1. Cliquer sur "Statistiques" dans la navbar
+2. Visualiser les données agrégées :
+   - **Vue d'ensemble** : Nombre de listes, albums, moyenne, période couverte
+   - **Albums par décennie** : Graphique en barres de vos albums par décennie
+   - **Listes par période** : Répartition de vos listes (années, décennies)
+   - **Top 10 artistes** : Artistes les plus présents dans vos listes
+   - **Albums favoris** : Albums présents dans plusieurs listes
+   - **Record** : Votre liste la plus longue
+3. Statistiques mises à jour en temps réel
 
 ### Partager
 1. Cliquer sur "Partager" dans une liste
