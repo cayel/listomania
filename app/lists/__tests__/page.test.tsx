@@ -41,7 +41,11 @@ jest.mock('lucide-react', () => ({
   Globe: () => <div>Globe</div>,
   Upload: () => <div>Upload</div>,
   Pencil: () => <div>Pencil</div>,
-  Trash2: () => <div>Trash</div>
+  Trash2: () => <div>Trash</div>,
+  Search: () => <div>Search</div>,
+  SlidersHorizontal: () => <div>SlidersHorizontal</div>,
+  X: () => <div>X</div>,
+  ArrowUpDown: () => <div>ArrowUpDown</div>
 }))
 
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>

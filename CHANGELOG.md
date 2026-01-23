@@ -11,6 +11,46 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 - Optimisation export playlists pour grandes listes (50+ albums)
 - Cache des tracklists Discogs
 
+## [1.5.0] - 2026-01-23
+
+### Ajouté
+- 🔎 Système de recherche et tri sur la page Explore (listes publiques)
+- 📅 Tri par période/année sur page "Mes Listes"
+- 🔍 Recherche par titre, description, auteur et période sur Explore
+- 📊 Tri par 4 critères sur Explore (récentes, titre, albums, période/année)
+- 🔄 Ordre de tri inversable (croissant/décroissant)
+- 🏷️ Filtre par période (extraction automatique des périodes uniques)
+- 📈 Panneau de filtres dépliable avec badge de notification
+- 📱 Interface responsive et cohérente entre Explore et Mes Listes
+- ⚡ Performance optimisée avec useMemo
+- ✅ 16 tests pour la page Explore + 1 test pour tri par période
+- 📖 Synchronisation des systèmes de filtres
+
+### Modifié
+- 🎨 Interface page Explore améliorée avec filtres avancés
+- ♿ Accessibilité renforcée (labels avec htmlFor, navigation clavier)
+- 🔧 Type de sortBy étendu avec 'period' sur les deux pages
+
+## [1.4.0] - 2026-01-23
+
+### Ajouté
+- 🔎 Système complet de recherche et filtres pour les listes
+- 🔍 Barre de recherche en temps réel (titre et description)
+- 📊 Tri par 4 critères (dernière modification, date création, titre, nombre d'albums)
+- 🔄 Ordre de tri inversable (croissant/décroissant)
+- 🏷️ Filtre par période (extraction automatique des périodes uniques)
+- 👁️ Filtre par visibilité (toutes/publiques/privées)
+- 📈 Panneau de filtres dépliable avec badge "Actifs"
+- 📱 Interface responsive (1-4 colonnes selon écran)
+- 🔢 Compteur de résultats filtrés
+- ⚡ Performance optimisée avec useMemo
+- ✅ 16 tests complets pour les filtres
+- 📖 Documentation (FILTERS-SEARCH.md)
+
+### Modifié
+- 🎨 Interface page "Mes Listes" améliorée
+- ♿ Accessibilité renforcée (labels, navigation clavier)
+
 ## [1.3.0] - 2026-01-21
 
 ### Ajouté

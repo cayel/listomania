@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
-import { Plus, Calendar, Lock, Globe, Upload, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Calendar, Lock, Globe, Upload, Pencil, Trash2, Search, SlidersHorizontal, X, ArrowUpDown } from 'lucide-react'
 
 interface List {
   id: string
@@ -38,6 +38,14 @@ export default function Lists() {
   const [isImporting, setIsImporting] = useState(false)
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, title: string } | null>(null)
+  
+  // États pour la recherche et les filtres
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'title' | 'updated' | 'created' | 'albums' | 'period'>('updated')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [filterPeriod, setFilterPeriod] = useState<string>('all')
+  const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all')
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -152,6 +160,81 @@ export default function Lists() {
     }
   }, [fetchLists, router])
 
+  // Filtrage et tri des listes
+  const filteredAndSortedLists = useMemo(() => {
+    let result = [...lists]
+
+    // Recherche par titre
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(list => 
+        list.title.toLowerCase().includes(query) ||
+        list.description?.toLowerCase().includes(query)
+      )
+    }
+
+    // Filtre par période
+    if (filterPeriod !== 'all') {
+      result = result.filter(list => list.period === filterPeriod)
+    }
+
+    // Filtre par visibilité
+    if (filterVisibility !== 'all') {
+      result = result.filter(list => 
+        filterVisibility === 'public' ? list.isPublic : !list.isPublic
+      )
+    }
+
+    // Tri
+    result.sort((a, b) => {
+      let comparison = 0
+      
+      switch (sortBy) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title)
+          break
+        case 'updated':
+          comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+          break
+        case 'created':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          break
+        case 'albums':
+          comparison = a._count.listAlbums - b._count.listAlbums
+          break
+        case 'period':
+          const periodA = a.period || ''
+          const periodB = b.period || ''
+          comparison = periodA.localeCompare(periodB)
+          break
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    return result
+  }, [lists, searchQuery, filterPeriod, filterVisibility, sortBy, sortOrder])
+
+  // Extraction des périodes uniques pour le filtre
+  const uniquePeriods = useMemo(() => {
+    const periods = lists
+      .map(list => list.period)
+      .filter((period): period is string => !!period)
+    return Array.from(new Set(periods)).sort()
+  }, [lists])
+
+  const toggleSortOrder = useCallback(() => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
+  }, [])
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery('')
+    setFilterPeriod('all')
+    setFilterVisibility('all')
+    setSortBy('updated')
+    setSortOrder('desc')
+  }, [])
+
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -209,7 +292,7 @@ export default function Lists() {
       )}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h1 className="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">
             Mes Listes
           </h1>
@@ -235,6 +318,129 @@ export default function Lists() {
           </div>
         </div>
 
+        {/* Barre de recherche et filtres */}
+        {lists.length > 0 && (
+          <div className="mb-6 space-y-4">
+            {/* Barre de recherche */}
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher une liste..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 glass rounded-xl border-0 focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-gray-400"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Bouton pour afficher/masquer les filtres */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 px-4 py-2 glass rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span className="text-sm font-medium">Filtres et tri</span>
+                {(filterPeriod !== 'all' || filterVisibility !== 'all' || searchQuery) && (
+                  <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    Actifs
+                  </span>
+                )}
+              </button>
+
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {filteredAndSortedLists.length} {filteredAndSortedLists.length > 1 ? 'listes' : 'liste'}
+                {filteredAndSortedLists.length !== lists.length && ` sur ${lists.length}`}
+              </div>
+            </div>
+
+            {/* Panneau des filtres */}
+            {showFilters && (
+              <div className="glass rounded-xl p-4 space-y-4 border border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Tri */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Trier par
+                    </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+                      >
+                        <option value="updated">Dernière modification</option>
+                        <option value="created">Date de création</option>
+                        <option value="title">Titre (A-Z)</option>
+                        <option value="albums">Nombre d'albums</option>
+                        <option value="period">Période/Année</option>
+                      </select>
+                      <button
+                        onClick={toggleSortOrder}
+                        className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                        title={sortOrder === 'asc' ? 'Croissant' : 'Décroissant'}
+                      >
+                        <ArrowUpDown className={`h-4 w-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Filtre par période */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Période
+                    </label>
+                    <select
+                      value={filterPeriod}
+                      onChange={(e) => setFilterPeriod(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+                    >
+                      <option value="all">Toutes les périodes</option>
+                      {uniquePeriods.map(period => (
+                        <option key={period} value={period}>{period}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Filtre par visibilité */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Visibilité
+                    </label>
+                    <select
+                      value={filterVisibility}
+                      onChange={(e) => setFilterVisibility(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+                    >
+                      <option value="all">Toutes</option>
+                      <option value="public">Publiques</option>
+                      <option value="private">Privées</option>
+                    </select>
+                  </div>
+
+                  {/* Réinitialiser */}
+                  <div className="flex items-end">
+                    <button
+                      onClick={clearFilters}
+                      className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                    >
+                      Réinitialiser
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {lists.length === 0 ? (
           <div className="text-center py-16 glass rounded-3xl">
             <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
@@ -247,9 +453,21 @@ export default function Lists() {
               Créer ma première liste
             </Link>
           </div>
+        ) : filteredAndSortedLists.length === 0 ? (
+          <div className="text-center py-16 glass rounded-3xl">
+            <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
+              Aucune liste ne correspond à vos critères de recherche.
+            </p>
+            <button
+              onClick={clearFilters}
+              className="bg-blue-600 text-white hover:bg-blue-700 px-8 py-3 rounded-xl font-medium inline-block transition-all shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              Réinitialiser les filtres
+            </button>
+          </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {lists.map((list) => (
+            {filteredAndSortedLists.map((list) => (
               <Link
                 key={list.id}
                 href={`/lists/${list.id}`}

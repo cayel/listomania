@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
-import { Calendar, Globe, User as UserIcon } from 'lucide-react'
+import { Calendar, Globe, User as UserIcon, Search, X, ArrowUpDown, SlidersHorizontal } from 'lucide-react'
 
 interface List {
   id: string
@@ -32,6 +32,13 @@ export default function Explore() {
   const [lists, setLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [hasMore, setHasMore] = useState(false)
+  
+  // États pour la recherche et le tri
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'updated' | 'title' | 'albums' | 'period'>('updated')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [filterPeriod, setFilterPeriod] = useState<string>('')
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     fetchLists()
@@ -51,6 +58,75 @@ export default function Explore() {
       setIsLoading(false)
     }
   }
+
+  // Extraction des périodes uniques
+  const uniquePeriods = useMemo(() => {
+    const periods = lists
+      .map(list => list.period)
+      .filter((period): period is string => !!period)
+    return Array.from(new Set(periods)).sort()
+  }, [lists])
+
+  // Filtrage et tri des listes
+  const filteredAndSortedLists = useMemo(() => {
+    let result = [...lists]
+
+    // Filtre par recherche textuelle
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(list => 
+        list.title.toLowerCase().includes(query) ||
+        list.description?.toLowerCase().includes(query) ||
+        list.user.name?.toLowerCase().includes(query) ||
+        list.period?.toLowerCase().includes(query)
+      )
+    }
+
+    // Filtre par période
+    if (filterPeriod) {
+      result = result.filter(list => list.period === filterPeriod)
+    }
+
+    // Tri
+    result.sort((a, b) => {
+      let comparison = 0
+
+      switch (sortBy) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title)
+          break
+        case 'albums':
+          comparison = a._count.listAlbums - b._count.listAlbums
+          break
+        case 'period':
+          const periodA = a.period || ''
+          const periodB = b.period || ''
+          comparison = periodA.localeCompare(periodB)
+          break
+        case 'updated':
+        default:
+          comparison = 0 // Par défaut, l'ordre de l'API
+          break
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    return result
+  }, [lists, searchQuery, filterPeriod, sortBy, sortOrder])
+
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
+  }
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setFilterPeriod('')
+    setSortBy('updated')
+    setSortOrder('desc')
+  }
+
+  const hasActiveFilters = searchQuery || filterPeriod || sortBy !== 'updated' || sortOrder !== 'desc'
 
   if (isLoading) {
     return (
@@ -77,6 +153,136 @@ export default function Explore() {
           </p>
         </div>
 
+        {/* Barre de recherche et filtres */}
+        {lists.length > 0 && (
+          <div className="mb-6 space-y-4">
+            {/* Barre de recherche */}
+            <div className="flex gap-3 items-center">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher par titre, description, auteur ou période..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-3 glass rounded-xl border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-400 outline-none transition-all text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  </button>
+                )}
+              </div>
+              
+              {/* Bouton filtres */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`relative px-4 py-3 glass rounded-xl border-2 transition-all flex items-center gap-2 ${
+                  showFilters 
+                    ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950' 
+                    : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <SlidersHorizontal className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filtres</span>
+                {hasActiveFilters && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
+                )}
+              </button>
+            </div>
+
+            {/* Panneau de filtres */}
+            {showFilters && (
+              <div className="glass rounded-xl p-4 space-y-3 border-2 border-blue-200 dark:border-blue-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* Tri par */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Trier par
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="w-full px-3 py-2 glass rounded-lg border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm focus:border-blue-500 dark:focus:border-blue-400 outline-none"
+                    >
+                      <option value="updated">Plus récentes</option>
+                      <option value="title">Titre (A-Z)</option>
+                      <option value="albums">Nombre d'albums</option>
+                      <option value="period">Période/Année</option>
+                    </select>
+                  </div>
+
+                  {/* Ordre */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Ordre
+                    </label>
+                    <button
+                      onClick={toggleSortOrder}
+                      className="w-full px-3 py-2 glass rounded-lg border border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 transition-colors flex items-center justify-center gap-2 text-sm text-gray-900 dark:text-white"
+                    >
+                      <ArrowUpDown className="h-4 w-4" />
+                      {sortOrder === 'asc' ? 'Croissant' : 'Décroissant'}
+                    </button>
+                  </div>
+
+                  {/* Filtre par période */}
+                  <div>
+                    <label htmlFor="filter-period" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Période/Année
+                    </label>
+                    <select
+                      id="filter-period"
+                      value={filterPeriod}
+                      onChange={(e) => setFilterPeriod(e.target.value)}
+                      className="w-full px-3 py-2 glass rounded-lg border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm focus:border-blue-500 dark:focus:border-blue-400 outline-none"
+                    >
+                      <option value="">Toutes les périodes</option>
+                      {uniquePeriods.map(period => (
+                        <option key={period} value={period}>
+                          {period}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Réinitialiser */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Actions
+                    </label>
+                    <button
+                      onClick={clearFilters}
+                      disabled={!hasActiveFilters}
+                      className="w-full px-3 py-2 glass rounded-lg border border-gray-300 dark:border-gray-600 hover:border-red-500 dark:hover:border-red-400 transition-colors text-sm text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600"
+                    >
+                      Réinitialiser
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Compteur de résultats */}
+            <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+              <span>
+                {filteredAndSortedLists.length === lists.length
+                  ? `${lists.length} liste${lists.length > 1 ? 's' : ''}`
+                  : `${filteredAndSortedLists.length} liste${filteredAndSortedLists.length > 1 ? 's' : ''} sur ${lists.length}`
+                }
+              </span>
+              {hasActiveFilters && (
+                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-medium">
+                  Filtres actifs
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {lists.length === 0 ? (
           <div className="text-center py-16 glass rounded-3xl">
             <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
@@ -89,9 +295,21 @@ export default function Explore() {
               Créer la première liste publique
             </Link>
           </div>
+        ) : filteredAndSortedLists.length === 0 ? (
+          <div className="text-center py-16 glass rounded-3xl">
+            <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
+              Aucune liste ne correspond à vos critères de recherche.
+            </p>
+            <button
+              onClick={clearFilters}
+              className="bg-blue-600 text-white hover:bg-blue-700 px-8 py-3 rounded-xl font-medium inline-block transition-all shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              Réinitialiser les filtres
+            </button>
+          </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {lists.map((list) => (
+            {filteredAndSortedLists.map((list) => (
               <Link
                 key={list.id}
                 href={`/lists/${list.id}`}

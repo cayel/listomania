@@ -4,9 +4,9 @@ Ce répertoire contient les tests de l'application Ranklist.
 
 ## 📊 État actuel
 
-- **Total tests** : 200 tests passants ✅
-- **Fichiers de tests** : 14 fichiers
-- **Coverage global** : ~34% (composants testés à 100%)
+- **Total tests** : 233 tests passants ✅
+- **Fichiers de tests** : 16 fichiers
+- **Coverage global** : ~35% (composants testés à 100%)
 
 ## Structure
 

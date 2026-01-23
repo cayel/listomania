@@ -27,7 +27,11 @@ jest.mock('@/components/navbar', () => ({
 jest.mock('lucide-react', () => ({
   Calendar: () => <div>Calendar Icon</div>,
   Globe: () => <div>Globe Icon</div>,
-  User: () => <div>User Icon</div>
+  User: () => <div>User Icon</div>,
+  Search: () => <div>Search Icon</div>,
+  X: () => <div>X Icon</div>,
+  ArrowUpDown: () => <div>ArrowUpDown Icon</div>,
+  SlidersHorizontal: () => <div>SlidersHorizontal Icon</div>
 }))
 
 global.fetch = jest.fn()
