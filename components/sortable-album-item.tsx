@@ -2,7 +2,8 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { GripVertical, X, List } from 'lucide-react'
 
 interface Album {
   id: string
@@ -22,6 +23,7 @@ interface SortableAlbumItemProps {
 }
 
 export function SortableAlbumItem({ listAlbumId, album, position, onRemove, showRank = true }: SortableAlbumItemProps) {
+  const router = useRouter()
   const {
     attributes,
     listeners,
@@ -89,6 +91,14 @@ export function SortableAlbumItem({ listAlbumId, album, position, onRemove, show
           </p>
         )}
       </div>
+
+      <button
+        onClick={() => router.push(`/albums/${album.id}`)}
+        className="flex-shrink-0 p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+        title="Voir les listes contenant cet album"
+      >
+        <List className="h-5 w-5" />
+      </button>
 
       <button
         onClick={() => onRemove(listAlbumId, album.title, album.artist)}

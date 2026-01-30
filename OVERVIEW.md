@@ -2,11 +2,11 @@
 
 ## 📊 Statistiques du projet
 
-- **Version actuelle** : 1.6.0
+- **Version actuelle** : 1.7.0
 - **Date de création** : Janvier 2026
 - **Langage principal** : TypeScript
 - **Framework** : Next.js 16.1.1
-- **Tests** : 243 tests passants
+- **Tests** : 257 tests passants
 - **Documentation** : 11 fichiers Markdown
 
 ## 🎯 Résumé
@@ -31,6 +31,7 @@ Ranklist est une application web moderne permettant de créer, organiser et part
 - Déduplication intelligente
 - Drag & drop pour réorganisation
 - Consultation détails albums
+- Visualisation des listes contenant un album
 
 ### 📦 Import/Export
 - **4 formats d'export** :
@@ -74,7 +75,7 @@ Backend:
 Testing:
 ├── Jest
 ├── React Testing Library
-└── 243 tests unitaires
+└── 257 tests unitaires
 
 Performance:
 ├── Cache PostgreSQL (tracklists)

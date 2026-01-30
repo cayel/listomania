@@ -26,6 +26,9 @@ const config: Config = {
     '!**/node_modules/**',
     '!**/.next/**',
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(jose|openid-client)/)',
+  ],
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

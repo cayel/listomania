@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ExternalLink, Calendar, Globe, Disc, Tag } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { X, ExternalLink, Calendar, Globe, Disc, Tag, List } from 'lucide-react'
 
 interface DiscogsAlbumDetails {
   id: string
@@ -23,6 +24,7 @@ interface AlbumDetailsModalProps {
 }
 
 export function AlbumDetailsModal({ albumId, onClose }: AlbumDetailsModalProps) {
+  const router = useRouter()
   const [details, setDetails] = useState<DiscogsAlbumDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -184,8 +186,18 @@ export function AlbumDetailsModal({ albumId, onClose }: AlbumDetailsModalProps) 
                 </div>
               )}
 
-              {/* Lien Discogs */}
-              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+              {/* Actions */}
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-3">
+                <button
+                  onClick={() => {
+                    router.push(`/albums/${albumId}`)
+                    onClose()
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
+                >
+                  <List className="h-4 w-4" />
+                  Voir les listes
+                </button>
                 <a
                   href={details.discogsUrl}
                   target="_blank"

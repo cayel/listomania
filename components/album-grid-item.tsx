@@ -2,7 +2,8 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, X, Info } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { GripVertical, X, Info, List } from 'lucide-react'
 import Image from 'next/image'
 
 interface Album {
@@ -33,6 +34,7 @@ export function AlbumGridItem({
   showRank,
   isOwner
 }: AlbumGridItemProps) {
+  const router = useRouter()
   const {
     attributes,
     listeners,
@@ -66,10 +68,17 @@ export function AlbumGridItem({
           <button
             {...attributes}
             {...listeners}
-            className="absolute top-2 right-20 z-10 p-1 bg-white/90 dark:bg-gray-800/90 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+            className="absolute top-2 right-28 z-10 p-1 bg-white/90 dark:bg-gray-800/90 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
             aria-label="Déplacer"
           >
             <GripVertical className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+          </button>
+          <button
+            onClick={() => router.push(`/albums/${album.id}`)}
+            className="absolute top-2 right-20 z-10 p-1 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-all hover:scale-110 hover:shadow-lg shadow-green-500/50"
+            aria-label="Voir les listes"
+          >
+            <List className="h-4 w-4" />
           </button>
           {!album.discogsId.startsWith('unknown-') && (
             <button

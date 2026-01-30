@@ -3,7 +3,7 @@
 > 🎵 **Application web moderne pour créer, organiser et partager vos classements d'albums musicaux avec intégration Discogs.**
 
 [![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-243%20passing-brightgreen.svg)](__tests__/README.md)
+[![Tests](https://img.shields.io/badge/tests-257%20total-brightgreen.svg)](__tests__/README.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **[🚀 Démarrage rapide](#-installation)** | **[📖 Documentation](docs/README.md)** | **[🏗️ Architecture](ARCHITECTURE.md)** | **[📝 Changelog](CHANGELOG.md)**
@@ -37,6 +37,7 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - 🔍 Recherche manuelle optimisée (bouton + Enter, déduplication intelligente)
 - 📊 Statistiques détaillées (albums par décennie, top artistes, albums favoris)
 - 🔎 Recherche et filtres de listes (recherche texte, tri, filtres période/visibilité)
+- 📋 Consultation des listes contenant un album spécifique
 
 ## 🛠️ Stack Technique
 

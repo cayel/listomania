@@ -4,9 +4,9 @@ Ce répertoire contient les tests de l'application Ranklist.
 
 ## 📊 État actuel
 
-- **Total tests** : 233 tests passants ✅
-- **Fichiers de tests** : 16 fichiers
-- **Coverage global** : ~35% (composants testés à 100%)
+- **Total tests** : 257 tests passants ✅
+- **Fichiers de tests** : 18 fichiers
+- **Coverage global** : ~38% (composants testés à 100%)
 
 ## Structure
 
@@ -23,6 +23,8 @@ __tests__/
 │   ├── navbar.test.tsx        # Navigation
 │   └── theme-toggle.test.tsx  # Thème clair/sombre
 └── app/                        # Tests pages et API
+    ├── albums/[id]/__tests__/
+    │   └── page.test.tsx      # Page listes d'albums (14 tests)
     ├── explore/__tests__/
     ├── lists/__tests__/
     └── lists/[id]/__tests__/
@@ -100,6 +102,17 @@ npm test -- discogs.test.ts
 - Persistance localStorage
 
 ### Tests de pages et fonctionnalités (app/)
+
+**Page listes d'albums** (`albums/[id]/page.test.tsx`) - 14 tests
+- Affichage informations album (titre, artiste, année, pochette)
+- Liste des listes contenant l'album
+- Navigation vers une liste au clic
+- États d'erreur et de chargement
+- Gestion du pluriel ("1 liste" vs "X listes")
+- Message pour utilisateurs non connectés
+- Bouton retour fonctionnel
+- Badges de visibilité (Public/Privé)
+- Affichage des métadonnées (position, total albums, propriétaire)
 
 **Export PNG** (`export-image.test.tsx`) - 17 tests
 - Modal export avec options

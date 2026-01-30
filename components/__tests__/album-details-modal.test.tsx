@@ -2,6 +2,18 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { AlbumDetailsModal } from '../album-details-modal'
 
+// Mock useRouter from Next.js
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+}))
+
 // Mock Lucide icons
 jest.mock('lucide-react', () => ({
   X: ({ className }: { className?: string }) => (
@@ -21,6 +33,9 @@ jest.mock('lucide-react', () => ({
   ),
   Tag: ({ className }: { className?: string }) => (
     <svg data-testid="tag-icon" className={className}>Tag</svg>
+  ),
+  List: ({ className }: { className?: string }) => (
+    <svg data-testid="list-icon" className={className}>List</svg>
   )
 }))
 

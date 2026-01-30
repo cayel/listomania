@@ -10,6 +10,28 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 ### En cours
 - (Rien en cours actuellement)
 
+## [1.7.0] - 2026-01-30
+
+### Ajouté
+- 📋 Page de consultation des listes contenant un album spécifique
+- 🔗 Nouvelle route API `/api/albums/[id]/lists` pour récupérer les listes
+- 🎯 Boutons "Voir les listes" dans la modal détails, grille et liste d'albums
+- ✅ 14 tests unitaires pour la nouvelle page albums
+- 🔒 Filtrage automatique : listes publiques + listes privées de l'utilisateur
+
+### Interface
+- **Modal détails Discogs** : Bouton vert "Voir les listes" avec icône List
+- **Grille d'albums** : Bouton List vert au hover de la carte
+- **Liste d'albums** : Icône List cliquable dans chaque item
+- **Page /albums/[id]** :
+  - En-tête avec pochette, titre, artiste, année
+  - Compteur de listes ("X liste(s)")
+  - Grille responsive (1-3 colonnes) des listes
+  - Badges de visibilité (Public/Privé)
+  - Navigation vers chaque liste
+  - Bouton retour
+  - Message si aucune liste (avec invitation à se connecter)
+
 ## [1.6.0] - 2026-01-30
 
 ### Ajouté
