@@ -34,7 +34,7 @@ export async function getCachedTracklist(
       return null
     }
 
-    return cached.tracklist as DiscogsTrack[]
+    return cached.tracklist as unknown as DiscogsTrack[]
   } catch (error) {
     console.error('Erreur lors de la récupération du cache:', error)
     return null
