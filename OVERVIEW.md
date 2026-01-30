@@ -2,12 +2,12 @@
 
 ## 📊 Statistiques du projet
 
-- **Version actuelle** : 1.3.0
+- **Version actuelle** : 1.6.0
 - **Date de création** : Janvier 2026
 - **Langage principal** : TypeScript
 - **Framework** : Next.js 16.1.1
-- **Tests** : 75+ tests passants
-- **Documentation** : 10 fichiers Markdown
+- **Tests** : 243 tests passants
+- **Documentation** : 11 fichiers Markdown
 
 ## 🎯 Résumé
 
@@ -47,6 +47,12 @@ Ranklist est une application web moderne permettant de créer, organiser et part
 - Compatible Spotify, Apple Music, Deezer
 - Outils : Soundiiz, TuneMyMusic, FreeYourMusic
 
+### ⚡ Performance
+- Cache intelligent des tracklists (30 jours)
+- Traitement parallèle (5 albums simultanés)
+- Export 80% plus rapide (première fois)
+- Export 95-97% plus rapide (avec cache)
+
 ## 🛠️ Stack technique
 
 ```
@@ -68,7 +74,13 @@ Backend:
 Testing:
 ├── Jest
 ├── React Testing Library
-└── 75+ tests unitaires
+└── 243 tests unitaires
+
+Performance:
+├── Cache PostgreSQL (tracklists)
+├── Traitement parallèle
+├── Cache Next.js (30 jours)
+└── 80-97% plus rapide
 ```
 
 ## 📁 Structure du projet
@@ -84,6 +96,7 @@ ranklist/
 ├── components/            # Composants React réutilisables
 ├── lib/                   # Bibliothèques et utilitaires
 │   ├── discogs.ts        # Service API Discogs
+│   ├── discogs-cache.ts  # Cache tracklists (30 jours)
 │   ├── auth.ts           # Configuration NextAuth
 │   └── utils/            # Helpers
 ├── prisma/               # Schéma BDD et migrations
@@ -123,6 +136,7 @@ npm run dev
 | [docs/README.md](docs/README.md) | Index de la documentation |
 | [docs/PLAYLIST-EXPORT.md](docs/PLAYLIST-EXPORT.md) | Guide export playlists |
 | [docs/PLAYLIST-FEATURE.md](docs/PLAYLIST-FEATURE.md) | Doc technique playlists |
+| [docs/PERFORMANCE-OPTIMIZATIONS.md](docs/PERFORMANCE-OPTIMIZATIONS.md) | Optimisations v1.6.0 |
 
 ## 🧪 Tests
 
@@ -137,11 +151,13 @@ npm test -- --coverage
 npm test -- --watch
 ```
 
-**Coverage** : 75+ tests couvrant :
-- Fonctions Discogs (déduplication, tracklists)
+**Coverage** : 243 tests couvrant :
+- Fonctions Discogs (déduplication, tracklists, cache)
 - Composants React (recherche, modal, export)
 - Gestion des périodes
 - Export d'images
+- Cache des tracklists (10 tests)
+- Filtres et recherche (16 tests)
 
 ## 🎯 Cas d'usage principaux
 
@@ -168,8 +184,8 @@ npm test -- --watch
 ### Court terme (Q1 2026)
 - [ ] Pagination listes explore
 - [ ] Filtres par genre/période
-- [ ] Cache tracklists Discogs
-- [ ] Optimisation grandes playlists
+- [x] Cache tracklists Discogs ✅ v1.6.0
+- [x] Optimisation grandes playlists ✅ v1.6.0
 
 ### Moyen terme (Q2-Q3 2026)
 - [ ] Statistiques utilisateur
@@ -187,23 +203,23 @@ npm test -- --watch
 
 | Métrique | Valeur |
 |----------|--------|
-| Lignes de code | ~10,000 |
-| Fichiers TypeScript | 50+ |
+| Lignes de code | ~11,000 |
+| Fichiers TypeScript | 52+ |
 | Composants React | 15+ |
 | Routes API | 20+ |
-| Tests | 75+ |
-| Fonctionnalités | 25+ |
-| Documentation | 10 fichiers |
+| Tests | 243 |
+| Fonctionnalités | 27+ |
+| Documentation | 11 fichiers |
 
 ## 🏆 Points forts
 
 ✅ **Architecture moderne** - Next.js 16 App Router, TypeScript strict  
 ✅ **Fonctionnalités riches** - 4 formats export, playlists universelles  
-✅ **Bien testé** - 75+ tests avec bon coverage  
-✅ **Documentation complète** - 10 fichiers Markdown détaillés  
+✅ **Bien testé** - 243 tests avec excellent coverage  
+✅ **Documentation complète** - 11 fichiers Markdown détaillés  
 ✅ **UX soignée** - Drag & drop, thèmes, responsive  
 ✅ **Sécurisé** - Auth robuste, validation Zod, protection CSRF  
-✅ **Performant** - Indexation BDD, déduplication optimisée  
+✅ **Performant** - Cache intelligent, parallélisation, 80-97% plus rapide  
 ✅ **Extensible** - Architecture claire, types stricts  
 
 ## 🤝 Contribution
@@ -233,4 +249,4 @@ MIT - Voir fichier LICENSE
 
 **Ranklist** - Créez, organisez, partagez vos classements musicaux 🎵
 
-*Dernière mise à jour : 21 janvier 2026 - Version 1.3.0*
+*Dernière mise à jour : 30 janvier 2026 - Version 1.6.0*

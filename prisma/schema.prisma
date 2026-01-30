@@ -109,3 +109,15 @@ model ListAlbum {
   @@unique([listId, position])
   @@index([listId])
 }
+
+model AlbumTracklist {
+  id          String   @id @default(cuid())
+  discogsId   String
+  discogsType String   // "master" ou "release"
+  tracklist   Json     // Stockage JSON de la tracklist
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([discogsId, discogsType])
+  @@index([discogsId, discogsType])
+}

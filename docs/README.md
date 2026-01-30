@@ -49,6 +49,20 @@ Bienvenue dans la documentation de Ranklist ! Cette page regroupe tous les guide
   - Limitations et conseils
 
 - **[PLAYLIST-FEATURE.md](PLAYLIST-FEATURE.md)** - Documentation technique playlists
+  - Architecture et implémentation
+  - API Discogs pour tracklists
+  - Génération des fichiers M3U8/CSV
+  - Tests unitaires
+
+### Performance
+
+- **[PERFORMANCE-OPTIMIZATIONS.md](PERFORMANCE-OPTIMIZATIONS.md)** - Optimisations v1.6.0 ⚡
+  - Cache des tracklists Discogs (30 jours)
+  - Traitement parallèle (5 albums simultanés)
+  - Résultats de performance (80-97% plus rapide)
+  - Configuration et monitoring
+
+- **[PLAYLIST-FEATURE.md](PLAYLIST-FEATURE.md)** - Documentation technique playlists
   - Architecture de la fonctionnalité
   - Workflow export
   - Format des fichiers générés

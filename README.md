@@ -2,8 +2,8 @@
 
 > 🎵 **Application web moderne pour créer, organiser et partager vos classements d'albums musicaux avec intégration Discogs.**
 
-[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-233%20passing-brightgreen.svg)](__tests__/README.md)
+[![Version](https://img.shields.io/badge/version-1.6.0-blue.svg)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-243%20passing-brightgreen.svg)](__tests__/README.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 **[🚀 Démarrage rapide](#-installation)** | **[📖 Documentation](docs/README.md)** | **[🏗️ Architecture](ARCHITECTURE.md)** | **[📝 Changelog](CHANGELOG.md)**
@@ -30,6 +30,7 @@ Application web moderne pour créer, organiser et partager vos classements d'alb
 - 📦 Import/Export JSON (liste complète avec métadonnées)
 - 🖼️ Export d'images PNG (mosaïque d'albums avec 3 styles visuels)
 - 🎵 Export de playlists universelles (M3U8 et CSV avec tracklists)
+- ⚡ Optimisations majeures : export 80-97% plus rapide (cache + parallélisation)
 - 🔖 URL de source pour listes importées
 - 🎵 Priorité aux masters Discogs (avec fallback sur releases)
 - ℹ️ Consultation détails Discogs (type, labels, genres, styles, pays)

@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getDiscogsAlbumWithTracks } from '@/lib/discogs'
 
+// Nombre d'albums à traiter en parallèle
+const PARALLEL_BATCH_SIZE = 5
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -44,40 +47,58 @@ export async function GET(
       )
     }
 
-    // Récupérer les tracklists de tous les albums
+    // Filtrer les albums valides
+    const validAlbums = list.listAlbums.filter(listAlbum => {
+      const album = listAlbum.album
+      return album.discogsId && !album.discogsId.startsWith('unknown-')
+    })
+
+    console.log(`Export playlist: ${validAlbums.length}/${list.listAlbums.length} albums valides`)
+
+    if (validAlbums.length === 0) {
+      return NextResponse.json(
+        { error: 'Aucun album valide pour export playlist' },
+        { status: 404 }
+      )
+    }
+
+    // Traiter les albums par lots en parallèle
     const albumsWithTracks = []
     
-    console.log(`Export playlist: ${list.listAlbums.length} albums dans la liste`)
-    
-    for (const listAlbum of list.listAlbums) {
-      const album = listAlbum.album
+    for (let i = 0; i < validAlbums.length; i += PARALLEL_BATCH_SIZE) {
+      const batch = validAlbums.slice(i, i + PARALLEL_BATCH_SIZE)
       
-      console.log(`Album: ${album.title} - discogsId: ${album.discogsId}, discogsType: ${(album as any).discogsType}`)
+      console.log(`Traitement batch ${Math.floor(i / PARALLEL_BATCH_SIZE) + 1}/${Math.ceil(validAlbums.length / PARALLEL_BATCH_SIZE)} (${batch.length} albums)`)
       
-      // Ignorer les albums sans ID Discogs valide
-      if (!album.discogsId || album.discogsId.startsWith('unknown-')) {
-        console.log(`  -> Ignoré (discogsId invalide ou unknown)`)
-        continue
-      }
-      
-      try {
-        const type = ((album as any).discogsType as 'master' | 'release') || 'master'
-        console.log(`  -> Récupération tracklist type: ${type}`)
-        const albumDetails = await getDiscogsAlbumWithTracks(album.discogsId, type)
-        
-        console.log(`  -> Tracklist récupérée: ${albumDetails.tracklist.length} pistes`)
-        
-        albumsWithTracks.push({
-          position: listAlbum.position,
-          album: albumDetails
+      // Traiter le lot en parallèle
+      const batchResults = await Promise.allSettled(
+        batch.map(async (listAlbum) => {
+          const album = listAlbum.album
+          const type = ((album as any).discogsType as 'master' | 'release') || 'master'
+          
+          try {
+            const albumDetails = await getDiscogsAlbumWithTracks(album.discogsId, type)
+            
+            return {
+              position: listAlbum.position,
+              album: albumDetails
+            }
+          } catch (error) {
+            console.error(`Erreur album ${album.title}:`, error)
+            throw error
+          }
         })
-      } catch (error) {
-        console.error(`  -> Erreur lors de la récupération de l'album ${album.title}:`, error)
-        // Continuer avec les autres albums même en cas d'erreur
+      )
+      
+      // Collecter les résultats réussis
+      for (const result of batchResults) {
+        if (result.status === 'fulfilled') {
+          albumsWithTracks.push(result.value)
+        }
       }
     }
     
-    console.log(`Total albums avec tracklist: ${albumsWithTracks.length}`)
+    console.log(`Total albums avec tracklist: ${albumsWithTracks.length}/${validAlbums.length}`)
 
     if (albumsWithTracks.length === 0) {
       return NextResponse.json(

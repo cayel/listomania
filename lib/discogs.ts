@@ -471,7 +471,7 @@ export function extractAlbumTitle(title: string): string {
 }
 
 /**
- * Récupère les détails complets d'un album avec sa tracklist
+ * Récupère les détails complets d'un album avec sa tracklist (avec cache)
  */
 export async function getDiscogsAlbumWithTracks(discogsId: string, type: 'master' | 'release'): Promise<DiscogsAlbumWithTracks> {
   const DISCOGS_TOKEN = process.env.DISCOGS_TOKEN
@@ -479,6 +479,12 @@ export async function getDiscogsAlbumWithTracks(discogsId: string, type: 'master
   if (!DISCOGS_TOKEN) {
     throw new Error('DISCOGS_TOKEN n\'est pas défini dans les variables d\'environnement')
   }
+
+  // Import dynamique pour éviter les dépendances circulaires
+  const { getCachedTracklist, setCachedTracklist } = await import('./discogs-cache')
+  
+  // Vérifier le cache d'abord
+  const cachedTracklist = await getCachedTracklist(discogsId, type)
 
   try {
     const endpoint = type === 'master' 
@@ -492,7 +498,7 @@ export async function getDiscogsAlbumWithTracks(discogsId: string, type: 'master
           'Authorization': `Discogs token=${DISCOGS_TOKEN}`,
           'User-Agent': 'ListOmania/1.0'
         },
-        next: { revalidate: 86400 } // Cache pour 24 heures
+        next: { revalidate: 2592000 } // Cache Next.js: 30 jours (au lieu de 24h)
       }
     )
 
@@ -514,12 +520,23 @@ export async function getDiscogsAlbumWithTracks(discogsId: string, type: 'master
       ? `${data.formats[0].name}${data.formats[0].descriptions ? ` (${data.formats[0].descriptions.join(', ')})` : ''}`
       : undefined
     
-    // Extraire la tracklist
-    const tracklist: DiscogsTrack[] = (data.tracklist || []).map((track: any) => ({
-      position: track.position || '',
-      title: track.title || '',
-      duration: track.duration || ''
-    }))
+    // Utiliser le cache si disponible, sinon extraire de l'API
+    let tracklist: DiscogsTrack[]
+    
+    if (cachedTracklist) {
+      tracklist = cachedTracklist
+    } else {
+      tracklist = (data.tracklist || []).map((track: any) => ({
+        position: track.position || '',
+        title: track.title || '',
+        duration: track.duration || ''
+      }))
+      
+      // Sauvegarder dans le cache (asynchrone, ne pas attendre)
+      setCachedTracklist(discogsId, type, tracklist).catch(err => 
+        console.error('Erreur cache tracklist:', err)
+      )
+    }
     
     return {
       id: data.id.toString(),
