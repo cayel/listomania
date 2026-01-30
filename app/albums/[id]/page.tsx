@@ -178,9 +178,13 @@ export default function AlbumListsPage() {
                       {list.listTitle}
                     </h3>
                     {list.isPublic ? (
-                      <Globe className="w-5 h-5 text-green-500 flex-shrink-0 ml-2" title="Liste publique" />
+                      <span title="Liste publique">
+                        <Globe className="w-5 h-5 text-green-500 flex-shrink-0 ml-2" aria-label="Liste publique" />
+                      </span>
                     ) : (
-                      <Lock className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" title="Liste privée" />
+                      <span title="Liste privée">
+                        <Lock className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" aria-label="Liste privée" />
+                      </span>
                     )}
                   </div>
 
