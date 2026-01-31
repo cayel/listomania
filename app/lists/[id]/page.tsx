@@ -181,6 +181,7 @@ export default function ListDetail() {
         },
         body: JSON.stringify({
           discogsId: album.id,
+          discogsType: album.type,
           artist: album.artist,
           title: album.title,
           year: album.year,

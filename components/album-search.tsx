@@ -10,6 +10,7 @@ interface Album {
   year?: number
   coverImage?: string
   thumb?: string
+  type?: 'master' | 'release'
 }
 
 interface AlbumSearchProps {

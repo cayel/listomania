@@ -43,6 +43,7 @@ export interface DiscogsAlbum {
   artistId?: string
   year?: number
   coverImage?: string
+  type?: 'master' | 'release'
 }
 
 export interface User {

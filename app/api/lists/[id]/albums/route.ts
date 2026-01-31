@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getDiscogsMasterDetails } from '@/lib/discogs'
+import { getDiscogsDetails } from '@/lib/discogs'
 import { z } from 'zod'
 
 const addAlbumSchema = z.object({
   discogsId: z.string(),
+  discogsType: z.enum(['master', 'release']).optional(),
   discogsArtistId: z.string().optional(),
   artist: z.string(),
   title: z.string(),
@@ -67,11 +68,11 @@ export async function POST(
       // Si l'album n'existe pas, essayer de récupérer les détails complets depuis Discogs
       // incluant le discogsArtistId
       try {
-        const discogsDetails = await getDiscogsMasterDetails(albumData.discogsId)
+        const discogsDetails = await getDiscogsDetails(albumData.discogsId, albumData.discogsType)
         album = await prisma.album.create({
           data: {
             discogsId: albumData.discogsId,
-            discogsType: 'master',
+            discogsType: albumData.discogsType || 'master',
             discogsArtistId: discogsDetails.discogsArtistId,
             artist: discogsDetails.artist || albumData.artist,
             title: discogsDetails.title || albumData.title,
@@ -85,7 +86,7 @@ export async function POST(
         album = await prisma.album.create({
           data: {
             ...albumData,
-            discogsType: 'master'
+            discogsType: albumData.discogsType || 'master'
           }
         })
       }

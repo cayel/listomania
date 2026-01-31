@@ -149,7 +149,8 @@ export async function searchDiscogsAlbums(query: string): Promise<DiscogsAlbum[]
         artist: extractArtistFromTitle(result.title),
         year: result.year ? parseInt(result.year) : undefined,
         coverImage: result.cover_image || result.thumb,
-        thumb: result.thumb
+        thumb: result.thumb,
+        type: result.type as 'master' | 'release'
       }))
     
     return albums
