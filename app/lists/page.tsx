@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
-import { Plus, Calendar, Lock, Globe, Upload, Pencil, Trash2, Search, SlidersHorizontal, X, ArrowUpDown } from 'lucide-react'
+import { Plus, Calendar, Lock, Globe, Upload, Pencil, Trash2, Search, SlidersHorizontal, X, ArrowUpDown, Grid3x3, List as ListIcon, Table, Eye, EyeOff, CheckSquare, Square, Trash, BarChart3 } from 'lucide-react'
 
 interface List {
   id: string
@@ -46,6 +46,12 @@ export default function Lists() {
   const [filterPeriod, setFilterPeriod] = useState<string>('all')
   const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all')
   const [showFilters, setShowFilters] = useState(false)
+  
+  // Nouveaux états pour les vues et sélections
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid')
+  const [selectedLists, setSelectedLists] = useState<Set<string>>(new Set())
+  const [showStats, setShowStats] = useState(false)
+  const [isSelectMode, setIsSelectMode] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -235,6 +241,107 @@ export default function Lists() {
     setSortOrder('desc')
   }, [])
 
+  // Fonctions de sélection
+  const toggleSelectList = useCallback((listId: string) => {
+    setSelectedLists(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(listId)) {
+        newSet.delete(listId)
+      } else {
+        newSet.add(listId)
+      }
+      return newSet
+    })
+  }, [])
+
+  const selectAllVisible = useCallback(() => {
+    setSelectedLists(new Set(filteredAndSortedLists.map(list => list.id)))
+  }, [filteredAndSortedLists])
+
+  const deselectAll = useCallback(() => {
+    setSelectedLists(new Set())
+  }, [])
+
+  const deleteSelectedLists = useCallback(async () => {
+    if (selectedLists.size === 0) return
+    
+    const confirmMsg = `Êtes-vous sûr de vouloir supprimer ${selectedLists.size} liste(s) ? Cette action est irréversible.`
+    if (!confirm(confirmMsg)) return
+
+    try {
+      const deletePromises = Array.from(selectedLists).map(listId =>
+        fetch(`/api/lists/${listId}`, { method: 'DELETE' })
+      )
+      
+      await Promise.all(deletePromises)
+      
+      setLists(lists.filter(list => !selectedLists.has(list.id)))
+      setSelectedLists(new Set())
+      setNotification({ 
+        type: 'success', 
+        message: `${selectedLists.size} liste(s) supprimée(s) avec succès` 
+      })
+      setTimeout(() => setNotification(null), 3000)
+    } catch (error) {
+      console.error('Erreur lors de la suppression multiple:', error)
+      setNotification({ 
+        type: 'error', 
+        message: 'Erreur lors de la suppression' 
+      })
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [selectedLists, lists])
+
+  const toggleVisibilitySelected = useCallback(async (makePublic: boolean) => {
+    if (selectedLists.size === 0) return
+
+    try {
+      const updatePromises = Array.from(selectedLists).map(listId =>
+        fetch(`/api/lists/${listId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isPublic: makePublic })
+        })
+      )
+      
+      await Promise.all(updatePromises)
+      
+      setLists(lists.map(list => 
+        selectedLists.has(list.id) ? { ...list, isPublic: makePublic } : list
+      ))
+      
+      setNotification({ 
+        type: 'success', 
+        message: `${selectedLists.size} liste(s) ${makePublic ? 'rendue(s) publique(s)' : 'rendue(s) privée(s)'}` 
+      })
+      setTimeout(() => setNotification(null), 3000)
+      setSelectedLists(new Set())
+    } catch (error) {
+      console.error('Erreur lors de la modification de visibilité:', error)
+      setNotification({ 
+        type: 'error', 
+        message: 'Erreur lors de la modification' 
+      })
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [selectedLists, lists])
+
+  // Statistiques
+  const stats = useMemo(() => {
+    const totalAlbums = lists.reduce((acc, list) => acc + list._count.listAlbums, 0)
+    const publicLists = lists.filter(list => list.isPublic).length
+    const privateLists = lists.filter(list => !list.isPublic).length
+    const avgAlbumsPerList = lists.length > 0 ? Math.round(totalAlbums / lists.length) : 0
+    
+    return {
+      totalLists: lists.length,
+      totalAlbums,
+      publicLists,
+      privateLists,
+      avgAlbumsPerList
+    }
+  }, [lists])
+
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -293,10 +400,26 @@ export default function Lists() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h1 className="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">
-            Mes Listes
-          </h1>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">
+              Mes Listes
+            </h1>
+            {lists.length > 0 && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {lists.length} liste{lists.length > 1 ? 's' : ''} • {stats.totalAlbums} album{stats.totalAlbums > 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            {lists.length > 0 && (
+              <button
+                onClick={() => setShowStats(!showStats)}
+                className="bg-purple-600 text-white hover:bg-purple-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium inline-flex items-center justify-center space-x-2 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-sm sm:text-base">Statistiques</span>
+              </button>
+            )}
             <label className={`bg-green-600 text-white hover:bg-green-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium inline-flex items-center justify-center space-x-2 transition-all shadow-lg hover:shadow-xl ${isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}>
               <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="text-sm sm:text-base">Importer une liste</span>
@@ -317,6 +440,43 @@ export default function Lists() {
             </Link>
           </div>
         </div>
+
+        {/* Panneau de statistiques */}
+        {showStats && lists.length > 0 && (
+          <div className="mb-6 glass rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">📊 Statistiques</h2>
+              <button
+                onClick={() => setShowStats(false)}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalLists}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Liste{stats.totalLists > 1 ? 's' : ''}</div>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.totalAlbums}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Album{stats.totalAlbums > 1 ? 's' : ''}</div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.publicLists}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Publique{stats.publicLists > 1 ? 's' : ''}</div>
+              </div>
+              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.privateLists}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Privée{stats.privateLists > 1 ? 's' : ''}</div>
+              </div>
+              <div className="bg-pink-50 dark:bg-pink-900/20 rounded-xl p-4">
+                <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">{stats.avgAlbumsPerList}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Moy. / liste</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Barre de recherche et filtres */}
         {lists.length > 0 && (
@@ -342,23 +502,127 @@ export default function Lists() {
             </div>
 
             {/* Bouton pour afficher/masquer les filtres */}
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 glass rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="text-sm font-medium">Filtres et tri</span>
-                {(filterPeriod !== 'all' || filterVisibility !== 'all' || searchQuery) && (
-                  <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
-                    Actifs
-                  </span>
-                )}
-              </button>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2 px-4 py-2 glass rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="text-sm font-medium">Filtres et tri</span>
+                  {(filterPeriod !== 'all' || filterVisibility !== 'all' || searchQuery) && (
+                    <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                      Actifs
+                    </span>
+                  )}
+                </button>
 
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {filteredAndSortedLists.length} {filteredAndSortedLists.length > 1 ? 'listes' : 'liste'}
-                {filteredAndSortedLists.length !== lists.length && ` sur ${lists.length}`}
+                {/* Mode de sélection */}
+                <button
+                  onClick={() => {
+                    setIsSelectMode(!isSelectMode)
+                    if (isSelectMode) {
+                      setSelectedLists(new Set())
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isSelectMode 
+                      ? 'bg-blue-600 text-white' 
+                      : 'glass hover:bg-white/50 dark:hover:bg-gray-800/50'
+                  }`}
+                >
+                  <CheckSquare className="h-4 w-4" />
+                  <span className="text-sm font-medium">Sélectionner</span>
+                </button>
+
+                {/* Modes de vue */}
+                <div className="flex items-center gap-1 glass rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'grid' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'hover:bg-white/50 dark:hover:bg-gray-800/50'
+                    }`}
+                    title="Vue grille"
+                  >
+                    <Grid3x3 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'list' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'hover:bg-white/50 dark:hover:bg-gray-800/50'
+                    }`}
+                    title="Vue liste"
+                  >
+                    <ListIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'table' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'hover:bg-white/50 dark:hover:bg-gray-800/50'
+                    }`}
+                    title="Vue tableau"
+                  >
+                    <Table className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* Actions de sélection */}
+                {isSelectMode && selectedLists.size > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedLists.size} sélectionnée{selectedLists.size > 1 ? 's' : ''}
+                    </span>
+                    <button
+                      onClick={() => toggleVisibilitySelected(true)}
+                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
+                    >
+                      <Globe className="h-3.5 w-3.5" />
+                      <span>Public</span>
+                    </button>
+                    <button
+                      onClick={() => toggleVisibilitySelected(false)}
+                      className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm flex items-center gap-1"
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      <span>Privé</span>
+                    </button>
+                    <button
+                      onClick={deleteSelectedLists}
+                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center gap-1"
+                    >
+                      <Trash className="h-3.5 w-3.5" />
+                      <span>Supprimer</span>
+                    </button>
+                    <button
+                      onClick={deselectAll}
+                      className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                )}
+
+                {isSelectMode && selectedLists.size === 0 && filteredAndSortedLists.length > 0 && (
+                  <button
+                    onClick={selectAllVisible}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Tout sélectionner
+                  </button>
+                )}
+
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {filteredAndSortedLists.length} {filteredAndSortedLists.length > 1 ? 'listes' : 'liste'}
+                  {filteredAndSortedLists.length !== lists.length && ` sur ${lists.length}`}
+                </div>
               </div>
             </div>
 
@@ -466,190 +730,457 @@ export default function Lists() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {filteredAndSortedLists.map((list) => (
-              <Link
-                key={list.id}
-                href={`/lists/${list.id}`}
-                className="group glass rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
-              >
-                {/* Preview des pochettes - Hero section */}
-<div className="relative h-36 bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-600/30 dark:to-purple-600/30 overflow-hidden">
-                  {list.listAlbums.length > 0 ? (
-                    <>
-                      {list.listAlbums.length === 1 ? (
-                        /* 1 seul album - centré */
-                        <div className="absolute inset-0 p-2 flex items-center justify-center">
-                          <div className="h-full aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105">
-                            {list.listAlbums[0].album.coverImage ? (
-                              <Image
-                                src={list.listAlbums[0].album.coverImage}
-                                alt={list.listAlbums[0].album.title}
-                                width={130}
-                                height={130}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center text-4xl text-gray-400">
-                                🎵
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : list.listAlbums.length === 2 ? (
-                        /* 2 albums - côte à côte */
-                        <div className="absolute inset-0 p-2 flex gap-1.5">
-                          {list.listAlbums.slice(0, 2).map((listAlbum, idx) => (
-                            <div
-                              key={idx}
-                              className="flex-1 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105"
-                            >
-                              {listAlbum.album.coverImage ? (
-                                <Image
-                                  src={listAlbum.album.coverImage}
-                                  alt={listAlbum.album.title}
-                                  width={130}
-                                  height={130}
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="h-full w-full flex items-center justify-center text-3xl text-gray-400">
-                                  🎵
+          <>
+            {/* Vue grille */}
+            {viewMode === 'grid' && (
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {filteredAndSortedLists.map((list) => (
+                  <div key={list.id} className="relative">
+                    {isSelectMode && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            toggleSelectList(list.id)
+                          }}
+                          className="p-1.5 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:scale-110 transition-transform"
+                        >
+                          {selectedLists.has(list.id) ? (
+                            <CheckSquare className="h-5 w-5 text-blue-600" />
+                          ) : (
+                            <Square className="h-5 w-5 text-gray-400" />
+                          )}
+                        </button>
+                      </div>
+                    )}
+                    <Link
+                      href={`/lists/${list.id}`}
+                      className={`group glass rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col ${
+                        selectedLists.has(list.id) ? 'ring-2 ring-blue-600' : ''
+                      }`}
+                    >
+                      {/* Preview des pochettes - Hero section */}
+                      <div className="relative h-36 bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-600/30 dark:to-purple-600/30 overflow-hidden">
+                        {list.listAlbums.length > 0 ? (
+                          <>
+                            {list.listAlbums.length === 1 ? (
+                              /* 1 seul album - centré */
+                              <div className="absolute inset-0 p-2 flex items-center justify-center">
+                                <div className="h-full aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105">
+                                  {list.listAlbums[0].album.coverImage ? (
+                                    <Image
+                                      src={list.listAlbums[0].album.coverImage}
+                                      alt={list.listAlbums[0].album.title}
+                                      width={130}
+                                      height={130}
+                                      className="h-full w-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-4xl text-gray-400">
+                                      🎵
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        /* 3+ albums - mosaïque */
-                        <div className="absolute inset-0 p-2 flex gap-1.5">
-                          {/* Premier album - grand format à gauche */}
-                          <div className="w-2/5 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105">
-                            {list.listAlbums[0].album.coverImage ? (
-                              <Image
-                                src={list.listAlbums[0].album.coverImage}
-                                alt={list.listAlbums[0].album.title}
-                                width={130}
-                                height={130}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
+                              </div>
+                            ) : list.listAlbums.length === 2 ? (
+                              /* 2 albums - côte à côte */
+                              <div className="absolute inset-0 p-2 flex gap-1.5">
+                                {list.listAlbums.slice(0, 2).map((listAlbum, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex-1 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105"
+                                  >
+                                    {listAlbum.album.coverImage ? (
+                                      <Image
+                                        src={listAlbum.album.coverImage}
+                                        alt={listAlbum.album.title}
+                                        width={130}
+                                        height={130}
+                                        className="h-full w-full object-cover"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <div className="h-full w-full flex items-center justify-center text-3xl text-gray-400">
+                                        🎵
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             ) : (
-                              <div className="h-full w-full flex items-center justify-center text-3xl text-gray-400">
-                                🎵
+                              /* 3+ albums - mosaïque */
+                              <div className="absolute inset-0 p-2 flex gap-1.5">
+                                {/* Premier album - grand format à gauche */}
+                                <div className="w-2/5 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105">
+                                  {list.listAlbums[0].album.coverImage ? (
+                                    <Image
+                                      src={list.listAlbums[0].album.coverImage}
+                                      alt={list.listAlbums[0].album.title}
+                                      width={130}
+                                      height={130}
+                                      className="h-full w-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center text-3xl text-gray-400">
+                                      🎵
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Albums 2 et 3 - format moyen empilés à droite */}
+                                <div className="flex-1 flex flex-col gap-1.5">
+                                  {[1, 2].map((idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex-1 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105"
+                                    >
+                                      {list.listAlbums[idx]?.album.coverImage ? (
+                                        <Image
+                                          src={list.listAlbums[idx].album.coverImage}
+                                          alt={list.listAlbums[idx]?.album.title}
+                                          width={80}
+                                          height={60}
+                                          className="h-full w-full object-cover"
+                                          loading="lazy"
+                                        />
+                                      ) : (
+                                        <div className="h-full w-full flex items-center justify-center text-xl text-gray-400">
+                                          🎵
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
+                          </>
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="text-4xl mb-1 opacity-30">🎵</div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">Liste vide</p>
+                            </div>
                           </div>
-                          
-                          {/* Albums 2 et 3 - format moyen empilés à droite */}
-                          <div className="flex-1 flex flex-col gap-1.5">
-                            {[1, 2].map((idx) => (
-                              <div
-                                key={idx}
-                                className="flex-1 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg transform transition-all group-hover:scale-105"
+                        )}
+                        
+                        {/* Badges overlay */}
+                        <div className="absolute top-2 right-2 flex gap-1.5">
+                          {list.isPublic ? (
+                            <div className="px-1.5 py-0.5 bg-green-600 backdrop-blur-sm rounded flex items-center gap-1 shadow-lg">
+                              <Globe className="h-2.5 w-2.5 text-white" />
+                              <span className="text-[10px] text-white font-medium">Public</span>
+                            </div>
+                          ) : (
+                            <div className="px-1.5 py-0.5 bg-gray-900/70 backdrop-blur-sm rounded flex items-center gap-1 shadow-lg">
+                              <Lock className="h-2.5 w-2.5 text-white" />
+                              <span className="text-[10px] text-white font-medium">Privé</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Compteur d'albums */}
+                        <div className="absolute bottom-2 left-2">
+                          <div className="px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded">
+                            <span className="text-white text-xs font-bold">
+                              {list._count.listAlbums} album{list._count.listAlbums > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contenu */}
+                      <div className="p-3 flex-1 flex flex-col">
+                        <h2 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1 line-clamp-1">
+                          {list.title}
+                        </h2>
+
+                        {list.description && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-1 flex-1">
+                            {list.description}
+                          </p>
+                        )}
+
+                        {list.period && (
+                          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-auto">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {list.period}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions footer */}
+                      <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-50/50 dark:bg-gray-800/50 flex justify-end gap-3">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            window.location.href = `/lists/${list.id}/edit`
+                          }}
+                          className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                          title="Modifier"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleDeleteClick(list.id, list.title)
+                          }}
+                          className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Vue liste */}
+            {viewMode === 'list' && (
+              <div className="space-y-3">
+                {filteredAndSortedLists.map((list) => (
+                  <div key={list.id} className="relative">
+                    <Link
+                      href={`/lists/${list.id}`}
+                      className={`group glass rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 flex items-center gap-4 p-4 ${
+                        selectedLists.has(list.id) ? 'ring-2 ring-blue-600' : ''
+                      }`}
+                    >
+                      {isSelectMode && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            toggleSelectList(list.id)
+                          }}
+                          className="flex-shrink-0"
+                        >
+                          {selectedLists.has(list.id) ? (
+                            <CheckSquare className="h-5 w-5 text-blue-600" />
+                          ) : (
+                            <Square className="h-5 w-5 text-gray-400" />
+                          )}
+                        </button>
+                      )}
+
+                      {/* Preview mini */}
+                      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+                        {list.listAlbums[0]?.album.coverImage ? (
+                          <Image
+                            src={list.listAlbums[0].album.coverImage}
+                            alt={list.title}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-2xl">
+                            🎵
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Infos */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                          {list.title}
+                        </h3>
+                        {list.description && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            {list.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          <span>{list._count.listAlbums} album{list._count.listAlbums > 1 ? 's' : ''}</span>
+                          {list.period && (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {list.period}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Badge visibilité */}
+                      <div className="flex-shrink-0">
+                        {list.isPublic ? (
+                          <div className="px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center gap-1.5">
+                            <Globe className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                            <span className="text-xs font-medium text-green-600 dark:text-green-400">Public</span>
+                          </div>
+                        ) : (
+                          <div className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center gap-1.5">
+                            <Lock className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Privé</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex-shrink-0 flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            window.location.href = `/lists/${list.id}/edit`
+                          }}
+                          className="p-2 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                          title="Modifier"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleDeleteClick(list.id, list.title)
+                          }}
+                          className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Vue tableau */}
+            {viewMode === 'table' && (
+              <div className="glass rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                      <tr>
+                        {isSelectMode && (
+                          <th className="px-4 py-3 text-left">
+                            <button
+                              onClick={() => {
+                                if (selectedLists.size === filteredAndSortedLists.length) {
+                                  deselectAll()
+                                } else {
+                                  selectAllVisible()
+                                }
+                              }}
+                            >
+                              {selectedLists.size === filteredAndSortedLists.length && filteredAndSortedLists.length > 0 ? (
+                                <CheckSquare className="h-5 w-5 text-blue-600" />
+                              ) : (
+                                <Square className="h-5 w-5 text-gray-400" />
+                              )}
+                            </button>
+                          </th>
+                        )}
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Titre</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white hidden md:table-cell">Description</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Albums</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">Période</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Visibilité</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {filteredAndSortedLists.map((list) => (
+                        <tr
+                          key={list.id}
+                          className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
+                            selectedLists.has(list.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                          }`}
+                        >
+                          {isSelectMode && (
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => toggleSelectList(list.id)}
                               >
-                                {list.listAlbums[idx]?.album.coverImage ? (
+                                {selectedLists.has(list.id) ? (
+                                  <CheckSquare className="h-5 w-5 text-blue-600" />
+                                ) : (
+                                  <Square className="h-5 w-5 text-gray-400" />
+                                )}
+                              </button>
+                            </td>
+                          )}
+                          <td className="px-4 py-3">
+                            <Link
+                              href={`/lists/${list.id}`}
+                              className="flex items-center gap-3 group"
+                            >
+                              <div className="flex-shrink-0 w-10 h-10 rounded overflow-hidden bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+                                {list.listAlbums[0]?.album.coverImage ? (
                                   <Image
-                                    src={list.listAlbums[idx].album.coverImage}
-                                    alt={list.listAlbums[idx]?.album.title}
-                                    width={80}
-                                    height={60}
-                                    className="h-full w-full object-cover"
+                                    src={list.listAlbums[0].album.coverImage}
+                                    alt={list.title}
+                                    width={40}
+                                    height={40}
+                                    className="w-full h-full object-cover"
                                     loading="lazy"
                                   />
                                 ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-xl text-gray-400">
+                                  <div className="w-full h-full flex items-center justify-center text-lg">
                                     🎵
                                   </div>
                                 )}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-4xl mb-1 opacity-30">🎵</div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Liste vide</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Badges overlay */}
-                  <div className="absolute top-2 right-2 flex gap-1.5">
-                    {list.isPublic ? (
-                      <div className="px-1.5 py-0.5 bg-green-600 backdrop-blur-sm rounded flex items-center gap-1 shadow-lg">
-                        <Globe className="h-2.5 w-2.5 text-white" />
-                        <span className="text-[10px] text-white font-medium">Public</span>
-                      </div>
-                    ) : (
-                      <div className="px-1.5 py-0.5 bg-gray-900/70 backdrop-blur-sm rounded flex items-center gap-1 shadow-lg">
-                        <Lock className="h-2.5 w-2.5 text-white" />
-                        <span className="text-[10px] text-white font-medium">Privé</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Compteur d'albums */}
-                  <div className="absolute bottom-2 left-2">
-                    <div className="px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded">
-                      <span className="text-white text-xs font-bold">
-                        {list._count.listAlbums} album{list._count.listAlbums > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  </div>
+                              <span className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                {list.title}
+                              </span>
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden md:table-cell max-w-xs truncate">
+                            {list.description || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                            {list._count.listAlbums}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden lg:table-cell">
+                            {list.period || '-'}
+                          </td>
+                          <td className="px-4 py-3">
+                            {list.isPublic ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded text-xs font-medium text-green-600 dark:text-green-400">
+                                <Globe className="h-3 w-3" />
+                                Public
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs font-medium text-gray-600 dark:text-gray-400">
+                                <Lock className="h-3 w-3" />
+                                Privé
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => window.location.href = `/lists/${list.id}/edit`}
+                                className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                                title="Modifier"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(list.id, list.title)}
+                                className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-
-                {/* Contenu */}
-                <div className="p-3 flex-1 flex flex-col">
-                  <h2 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1 line-clamp-1">
-                    {list.title}
-                  </h2>
-
-                  {list.description && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-1 flex-1">
-                      {list.description}
-                    </p>
-                  )}
-
-                  {list.period && (
-                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-auto">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {list.period}
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions footer */}
-                <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-50/50 dark:bg-gray-800/50 flex justify-end gap-3">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      window.location.href = `/lists/${list.id}/edit`
-                    }}
-                    className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                    title="Modifier"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handleDeleteClick(list.id, list.title)
-                    }}
-                    className="p-1.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                    title="Supprimer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </Link>
-            ))}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
