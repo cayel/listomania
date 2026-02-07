@@ -2,6 +2,22 @@
 
 ## Nouvelles Fonctionnalités
 
+### 💾 Mémorisation des Préférences
+
+**Toutes vos préférences d'affichage sont automatiquement sauvegardées !**
+
+Les paramètres suivants sont mémorisés entre vos sessions :
+- 🎨 **Mode de vue** (Grille / Liste / Tableau)
+- 🔄 **Tri sélectionné** (Dernière modification, Date de création, etc.)
+- ⬆️⬇️ **Ordre de tri** (Croissant / Décroissant)
+- 📅 **Filtre de période** (Si vous avez sélectionné une période spécifique)
+- 👁️ **Filtre de visibilité** (Publiques / Privées / Toutes)
+- 🔧 **État du panneau de filtres** (Ouvert / Fermé)
+
+Un petit indicateur vert "Préférences sauvegardées" ✓ apparaît brièvement quand vos choix sont enregistrés.
+
+**Avantage** : Vous retrouvez exactement votre configuration préférée à chaque visite !
+
 ### 🎯 Modes d'Affichage
 
 Vous disposez maintenant de **3 modes de visualisation** pour vos listes :
@@ -90,6 +106,13 @@ Un badge "Actifs" s'affiche quand des filtres sont appliqués.
 
 ## 💡 Cas d'Usage
 
+### Scénario 0 : Configuration personnalisée permanente
+1. Choisissez votre **vue préférée** (par exemple, tableau)
+2. Configurez votre **tri** (par exemple, par titre)
+3. Définissez vos **filtres** favoris
+4. 💾 **C'est automatiquement sauvegardé !**
+5. La prochaine fois que vous reviendrez, tout sera exactement comme vous l'avez laissé
+
 ### Scénario 1 : Organiser rapidement
 1. Activez la **vue tableau**
 2. Triez par "Nombre d'albums"
@@ -122,11 +145,13 @@ Un badge "Actifs" s'affiche quand des filtres sont appliqués.
 
 ## 🎯 Conseils
 
-1. **Utilisez les statistiques** pour avoir une vue d'ensemble de votre collection
-2. **La vue grille** est parfaite pour l'inspiration visuelle
-3. **La vue tableau** est idéale pour la gestion et l'organisation
-4. **La vue liste** offre le meilleur compromis entre les deux
-5. **Le mode sélection** vous fait gagner énormément de temps pour les actions groupées
+1. **Configurez une fois, profitez toujours** : Vos préférences sont sauvegardées automatiquement
+2. **Utilisez les statistiques** pour avoir une vue d'ensemble de votre collection
+3. **La vue grille** est parfaite pour l'inspiration visuelle
+4. **La vue tableau** est idéale pour la gestion et l'organisation
+5. **La vue liste** offre le meilleur compromis entre les deux
+6. **Le mode sélection** vous fait gagner énormément de temps pour les actions groupées
+7. **Le bouton "Réinitialiser"** efface tous les filtres ET réinitialise les préférences par défaut
 
 ## 🔄 Mise à jour des données
 

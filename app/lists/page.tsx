@@ -52,6 +52,49 @@ export default function Lists() {
   const [selectedLists, setSelectedLists] = useState<Set<string>>(new Set())
   const [showStats, setShowStats] = useState(false)
   const [isSelectMode, setIsSelectMode] = useState(false)
+  const [showSavedIndicator, setShowSavedIndicator] = useState(false)
+  const [isPreferencesLoaded, setIsPreferencesLoaded] = useState(false)
+
+  // Charger les préférences depuis localStorage au montage
+  useEffect(() => {
+    const savedPreferences = localStorage.getItem('listViewPreferences')
+    if (savedPreferences) {
+      try {
+        const prefs = JSON.parse(savedPreferences)
+        if (prefs.viewMode) setViewMode(prefs.viewMode)
+        if (prefs.sortBy) setSortBy(prefs.sortBy)
+        if (prefs.sortOrder) setSortOrder(prefs.sortOrder)
+        if (prefs.filterPeriod) setFilterPeriod(prefs.filterPeriod)
+        if (prefs.filterVisibility) setFilterVisibility(prefs.filterVisibility)
+        if (typeof prefs.showFilters === 'boolean') setShowFilters(prefs.showFilters)
+      } catch (error) {
+        console.error('Erreur lors du chargement des préférences:', error)
+      }
+    }
+    // Marquer les préférences comme chargées après un court délai
+    setTimeout(() => setIsPreferencesLoaded(true), 100)
+  }, [])
+
+  // Sauvegarder les préférences dans localStorage à chaque changement
+  // (mais pas lors du chargement initial)
+  useEffect(() => {
+    if (!isPreferencesLoaded) return
+
+    const preferences = {
+      viewMode,
+      sortBy,
+      sortOrder,
+      filterPeriod,
+      filterVisibility,
+      showFilters
+    }
+    localStorage.setItem('listViewPreferences', JSON.stringify(preferences))
+    
+    // Afficher un indicateur de sauvegarde pendant 1 seconde
+    setShowSavedIndicator(true)
+    const timer = setTimeout(() => setShowSavedIndicator(false), 1000)
+    return () => clearTimeout(timer)
+  }, [viewMode, sortBy, sortOrder, filterPeriod, filterVisibility, showFilters, isPreferencesLoaded])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -239,6 +282,8 @@ export default function Lists() {
     setFilterVisibility('all')
     setSortBy('updated')
     setSortOrder('desc')
+    setViewMode('grid')
+    setShowFilters(false)
   }, [])
 
   // Fonctions de sélection
@@ -571,6 +616,14 @@ export default function Lists() {
                     <Table className="h-4 w-4" />
                   </button>
                 </div>
+
+                {/* Indicateur de sauvegarde */}
+                {showSavedIndicator && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg text-xs text-green-700 dark:text-green-400 font-medium animate-fade-in">
+                    <CheckSquare className="h-3.5 w-3.5" />
+                    <span>Préférences sauvegardées</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-4">
