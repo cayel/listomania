@@ -79,6 +79,8 @@ model List {
 
   @@index([userId])
   @@index([isPublic])
+  @@index([updatedAt])
+  @@index([createdAt])
 }
 
 model Album {
@@ -96,6 +98,7 @@ model Album {
   @@index([artist])
   @@index([discogsArtistId])
   @@index([year])
+  @@index([discogsId])
 }
 
 model ListAlbum {

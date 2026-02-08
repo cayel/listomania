@@ -30,18 +30,40 @@ export async function GET() {
       where: {
         userId: session.user.id
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        period: true,
+        isPublic: true,
+        isRanked: true,
+        createdAt: true,
+        updatedAt: true,
         listAlbums: {
-          include: {
-            album: true
+          take: 4, // Ne charger que les 4 premiers albums pour l'aperçu
+          select: {
+            album: {
+              select: {
+                id: true,
+                title: true,
+                artist: true,
+                coverImage: true
+              }
+            }
           },
           orderBy: {
             position: 'asc'
           }
         },
         categories: {
-          include: {
-            category: true
+          select: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                color: true
+              }
+            }
           }
         },
         _count: {

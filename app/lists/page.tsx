@@ -70,6 +70,8 @@ export default function Lists() {
   const [showSavedIndicator, setShowSavedIndicator] = useState(false)
   const [isPreferencesLoaded, setIsPreferencesLoaded] = useState(false)
   const [showCategorySelector, setShowCategorySelector] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(30)
 
   // Charger les préférences depuis localStorage au montage
   useEffect(() => {
@@ -309,6 +311,20 @@ export default function Lists() {
       .filter((period): period is string => !!period)
     return Array.from(new Set(periods)).sort()
   }, [lists])
+
+  // Pagination des listes filtrées
+  const paginatedLists = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filteredAndSortedLists.slice(startIndex, endIndex)
+  }, [filteredAndSortedLists, currentPage, itemsPerPage])
+
+  const totalPages = Math.ceil(filteredAndSortedLists.length / itemsPerPage)
+
+  // Réinitialiser la page quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, filterPeriod, filterVisibility, filterCategory, sortBy, sortOrder])
 
   const toggleSortOrder = useCallback(() => {
     setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
@@ -950,7 +966,7 @@ export default function Lists() {
             {/* Vue grille */}
             {viewMode === 'grid' && (
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {filteredAndSortedLists.map((list) => (
+                {paginatedLists.map((list) => (
                   <div key={list.id} className="relative">
                     {isSelectMode && (
                       <div className="absolute top-2 left-2 z-10">
@@ -1178,7 +1194,7 @@ export default function Lists() {
             {/* Vue liste */}
             {viewMode === 'list' && (
               <div className="space-y-3">
-                {filteredAndSortedLists.map((list) => (
+                {paginatedLists.map((list) => (
                   <div key={list.id} className="relative">
                     <Link
                       href={`/lists/${list.id}`}
@@ -1338,7 +1354,7 @@ export default function Lists() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredAndSortedLists.map((list) => (
+                      {paginatedLists.map((list) => (
                         <tr
                           key={list.id}
                           className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
@@ -1449,6 +1465,60 @@ export default function Lists() {
               </div>
             )}
           </>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && filteredAndSortedLists.length > 0 && (
+          <div className="flex justify-center items-center gap-2 mt-8 pb-4">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Précédent
+            </button>
+            
+            <div className="flex gap-2">
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let pageNum
+                if (totalPages <= 5) {
+                  pageNum = i + 1
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-4 py-2 rounded-lg border transition-colors $\{
+                      currentPage === pageNum
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              })}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Suivant
+            </button>
+
+            <span className="ml-4 text-sm text-gray-600 dark:text-gray-400">
+              Page {currentPage} sur {totalPages}
+            </span>
+          </div>
         )}
       </div>
 
