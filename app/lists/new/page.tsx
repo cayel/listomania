@@ -1,9 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
 import { PeriodSelector } from '@/components/period-selector'
+import { X } from 'lucide-react'
+
+interface Category {
+  id: string
+  name: string
+  color?: string
+  icon?: string
+}
 
 export default function NewList() {
   const router = useRouter()
@@ -15,8 +23,26 @@ export default function NewList() {
     isPublic: false,
     isRanked: true
   })
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des catégories:', error)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,7 +55,10 @@ export default function NewList() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          categoryIds: selectedCategories
+        })
       })
 
       if (!response.ok) {
@@ -117,6 +146,53 @@ export default function NewList() {
               value={formData.period}
               onChange={(period) => setFormData({ ...formData, period })}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Catégories
+            </label>
+            <div className="space-y-2">
+              {categories.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Aucune catégorie disponible. Créez-en dans la page Listes.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => {
+                    const isSelected = selectedCategories.includes(category.id)
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedCategories(selectedCategories.filter(id => id !== category.id))
+                          } else {
+                            setSelectedCategories([...selectedCategories, category.id])
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                        style={isSelected && category.color ? {
+                          backgroundColor: category.color,
+                          color: '#ffffff'
+                        } : {}}
+                      >
+                        {category.icon && <span className="mr-1">{category.icon}</span>}
+                        {category.name}
+                        {isSelected && (
+                          <X className="inline-block ml-1 w-3 h-3" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center">

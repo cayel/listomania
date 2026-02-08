@@ -19,6 +19,7 @@ model User {
   password      String
   role          String    @default("user") // "user" ou "admin"
   lists         List[]
+  categories    Category[]
   accounts      Account[]
   sessions      Session[]
   createdAt     DateTime  @default(now())
@@ -72,6 +73,7 @@ model List {
   userId      String
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   listAlbums  ListAlbum[]
+  categories  ListCategory[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -120,4 +122,32 @@ model AlbumTracklist {
 
   @@unique([discogsId, discogsType])
   @@index([discogsId, discogsType])
+}
+
+model Category {
+  id        String         @id @default(cuid())
+  name      String
+  color     String?        // Couleur hex pour l'affichage (ex: "#3B82F6")
+  icon      String?        // Emoji ou nom d'icône
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lists     ListCategory[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, name]) // Un utilisateur ne peut pas avoir deux catégories avec le même nom
+  @@index([userId])
+}
+
+model ListCategory {
+  id         String   @id @default(cuid())
+  listId     String
+  categoryId String
+  list       List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([listId, categoryId]) // Une liste ne peut avoir qu'une fois la même catégorie
+  @@index([listId])
+  @@index([categoryId])
 }

@@ -10,7 +10,8 @@ const listSchema = z.object({
   period: z.string().optional(),
   sourceUrl: z.string().url().optional().or(z.literal('')),
   isPublic: z.boolean().default(false),
-  isRanked: z.boolean().default(true)
+  isRanked: z.boolean().default(true),
+  categoryIds: z.array(z.string()).optional()
 })
 
 // GET - Récupérer une liste spécifique
@@ -95,7 +96,7 @@ export async function PATCH(
 
     const { id: listId } = await params
     const body = await request.json()
-    const data = listSchema.partial().parse(body)
+    const { categoryIds, ...listData } = listSchema.partial().parse(body)
 
     // Vérifier que l'utilisateur est propriétaire
     const existingList = await prisma.list.findUnique({
@@ -116,9 +117,30 @@ export async function PATCH(
       )
     }
 
+    // Gérer les catégories si elles sont fournies
+    const updateData: any = { ...listData }
+    
+    if (categoryIds !== undefined) {
+      // Supprimer toutes les associations existantes
+      await prisma.listCategory.deleteMany({
+        where: { listId }
+      })
+      
+      // Créer les nouvelles associations
+      if (categoryIds.length > 0) {
+        updateData.categories = {
+          create: categoryIds.map(categoryId => ({
+            category: {
+              connect: { id: categoryId }
+            }
+          }))
+        }
+      }
+    }
+
     const list = await prisma.list.update({
       where: { id: listId },
-      data,
+      data: updateData,
       include: {
         listAlbums: {
           include: {
@@ -126,6 +148,11 @@ export async function PATCH(
           },
           orderBy: {
             position: 'asc'
+          }
+        },
+        categories: {
+          include: {
+            category: true
           }
         }
       }

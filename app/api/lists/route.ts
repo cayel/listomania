@@ -10,7 +10,8 @@ const listSchema = z.object({
   period: z.string().optional(),
   sourceUrl: z.string().url().optional().or(z.literal('')),
   isPublic: z.boolean().default(false),
-  isRanked: z.boolean().default(true)
+  isRanked: z.boolean().default(true),
+  categoryIds: z.array(z.string()).optional()
 })
 
 // GET - Récupérer toutes les listes de l'utilisateur
@@ -36,6 +37,11 @@ export async function GET() {
           },
           orderBy: {
             position: 'asc'
+          }
+        },
+        categories: {
+          include: {
+            category: true
           }
         },
         _count: {
@@ -72,17 +78,31 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const data = listSchema.parse(body)
+    const { categoryIds, ...listData } = listSchema.parse(body)
 
     const list = await prisma.list.create({
       data: {
-        ...data,
-        userId: session.user.id
+        ...listData,
+        userId: session.user.id,
+        ...(categoryIds && categoryIds.length > 0 && {
+          categories: {
+            create: categoryIds.map(categoryId => ({
+              category: {
+                connect: { id: categoryId }
+              }
+            }))
+          }
+        })
       },
       include: {
         listAlbums: {
           include: {
             album: true
+          }
+        },
+        categories: {
+          include: {
+            category: true
           }
         }
       }

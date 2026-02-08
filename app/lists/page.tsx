@@ -6,7 +6,18 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/navbar'
-import { Plus, Calendar, Lock, Globe, Upload, Pencil, Trash2, Search, SlidersHorizontal, X, ArrowUpDown, Grid3x3, List as ListIcon, Table, Eye, EyeOff, CheckSquare, Square, Trash, BarChart3 } from 'lucide-react'
+import { CategoryManager } from '@/components/category-manager'
+import { Plus, Calendar, Lock, Globe, Upload, Pencil, Trash2, Search, SlidersHorizontal, X, ArrowUpDown, Grid3x3, List as ListIcon, Table, Eye, EyeOff, CheckSquare, Square, Trash, BarChart3, Tag } from 'lucide-react'
+
+interface Category {
+  id: string
+  name: string
+  color?: string
+}
+
+interface ListCategory {
+  category: Category
+}
 
 interface List {
   id: string
@@ -15,6 +26,7 @@ interface List {
   period?: string
   isPublic: boolean
   isRanked?: boolean
+  categories?: ListCategory[]
   listAlbums: Array<{
     album: {
       id: string
@@ -34,6 +46,7 @@ export default function Lists() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [lists, setLists] = useState<List[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isImporting, setIsImporting] = useState(false)
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
@@ -45,7 +58,9 @@ export default function Lists() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [filterPeriod, setFilterPeriod] = useState<string>('all')
   const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all')
+  const [filterCategory, setFilterCategory] = useState<string>('all')
   const [showFilters, setShowFilters] = useState(false)
+  const [showCategoryManager, setShowCategoryManager] = useState(false)
   
   // Nouveaux états pour les vues et sélections
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid')
@@ -54,6 +69,7 @@ export default function Lists() {
   const [isSelectMode, setIsSelectMode] = useState(false)
   const [showSavedIndicator, setShowSavedIndicator] = useState(false)
   const [isPreferencesLoaded, setIsPreferencesLoaded] = useState(false)
+  const [showCategorySelector, setShowCategorySelector] = useState(false)
 
   // Charger les préférences depuis localStorage au montage
   useEffect(() => {
@@ -66,6 +82,7 @@ export default function Lists() {
         if (prefs.sortOrder) setSortOrder(prefs.sortOrder)
         if (prefs.filterPeriod) setFilterPeriod(prefs.filterPeriod)
         if (prefs.filterVisibility) setFilterVisibility(prefs.filterVisibility)
+        if (prefs.filterCategory) setFilterCategory(prefs.filterCategory)
         if (typeof prefs.showFilters === 'boolean') setShowFilters(prefs.showFilters)
       } catch (error) {
         console.error('Erreur lors du chargement des préférences:', error)
@@ -86,6 +103,7 @@ export default function Lists() {
       sortOrder,
       filterPeriod,
       filterVisibility,
+      filterCategory,
       showFilters
     }
     localStorage.setItem('listViewPreferences', JSON.stringify(preferences))
@@ -94,7 +112,7 @@ export default function Lists() {
     setShowSavedIndicator(true)
     const timer = setTimeout(() => setShowSavedIndicator(false), 1000)
     return () => clearTimeout(timer)
-  }, [viewMode, sortBy, sortOrder, filterPeriod, filterVisibility, showFilters, isPreferencesLoaded])
+  }, [viewMode, sortBy, sortOrder, filterPeriod, filterVisibility, filterCategory, showFilters, isPreferencesLoaded])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -105,6 +123,7 @@ export default function Lists() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchLists()
+      fetchCategories()
     }
   }, [status])
 
@@ -119,6 +138,18 @@ export default function Lists() {
       console.error('Erreur lors du chargement des listes:', error)
     } finally {
       setIsLoading(false)
+    }
+  }, [])
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des catégories:', error)
     }
   }, [])
 
@@ -234,6 +265,13 @@ export default function Lists() {
       )
     }
 
+    // Filtre par catégorie
+    if (filterCategory !== 'all') {
+      result = result.filter(list => 
+        list.categories?.some(lc => lc.category.id === filterCategory)
+      )
+    }
+
     // Tri
     result.sort((a, b) => {
       let comparison = 0
@@ -262,7 +300,7 @@ export default function Lists() {
     })
 
     return result
-  }, [lists, searchQuery, filterPeriod, filterVisibility, sortBy, sortOrder])
+  }, [lists, searchQuery, filterPeriod, filterVisibility, filterCategory, sortBy, sortOrder])
 
   // Extraction des périodes uniques pour le filtre
   const uniquePeriods = useMemo(() => {
@@ -280,6 +318,7 @@ export default function Lists() {
     setSearchQuery('')
     setFilterPeriod('all')
     setFilterVisibility('all')
+    setFilterCategory('all')
     setSortBy('updated')
     setSortOrder('desc')
     setViewMode('grid')
@@ -371,6 +410,50 @@ export default function Lists() {
     }
   }, [selectedLists, lists])
 
+  const addCategoryToSelected = useCallback(async (categoryId: string) => {
+    if (selectedLists.size === 0) return
+
+    try {
+      const updatePromises = Array.from(selectedLists).map(async (listId) => {
+        // Récupérer les catégories actuelles de la liste
+        const listToUpdate = lists.find(l => l.id === listId)
+        const currentCategoryIds = listToUpdate?.categories?.map(lc => lc.category.id) || []
+        
+        // Ajouter la nouvelle catégorie si elle n'existe pas déjà
+        if (!currentCategoryIds.includes(categoryId)) {
+          const newCategoryIds = [...currentCategoryIds, categoryId]
+          return fetch(`/api/lists/${listId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ categoryIds: newCategoryIds })
+          })
+        }
+        return Promise.resolve()
+      })
+      
+      await Promise.all(updatePromises)
+      
+      // Recharger les listes pour avoir les catégories à jour
+      await fetchLists()
+      
+      const categoryName = categories.find(c => c.id === categoryId)?.name || 'catégorie'
+      setNotification({ 
+        type: 'success', 
+        message: `${selectedLists.size} liste(s) associée(s) à "${categoryName}"` 
+      })
+      setTimeout(() => setNotification(null), 3000)
+      setSelectedLists(new Set())
+      setShowCategorySelector(false)
+    } catch (error) {
+      console.error('Erreur lors de l\'association:', error)
+      setNotification({ 
+        type: 'error', 
+        message: 'Erreur lors de l\'association' 
+      })
+      setTimeout(() => setNotification(null), 3000)
+    }
+  }, [selectedLists, lists, categories])
+
   // Statistiques
   const stats = useMemo(() => {
     const totalAlbums = lists.reduce((acc, list) => acc + list._count.listAlbums, 0)
@@ -378,14 +461,31 @@ export default function Lists() {
     const privateLists = lists.filter(list => !list.isPublic).length
     const avgAlbumsPerList = lists.length > 0 ? Math.round(totalAlbums / lists.length) : 0
     
+    // Statistiques par catégorie
+    const categoryStats = categories.map(category => {
+      const categoryLists = lists.filter(list => 
+        list.categories?.some(lc => lc.category.id === category.id)
+      )
+      const categoryAlbums = categoryLists.reduce((acc, list) => acc + list._count.listAlbums, 0)
+      
+      return {
+        id: category.id,
+        name: category.name,
+        color: category.color,
+        listsCount: categoryLists.length,
+        albumsCount: categoryAlbums
+      }
+    }).filter(stat => stat.listsCount > 0)
+    
     return {
       totalLists: lists.length,
       totalAlbums,
       publicLists,
       privateLists,
-      avgAlbumsPerList
+      avgAlbumsPerList,
+      categoryStats
     }
-  }, [lists])
+  }, [lists, categories])
 
   if (status === 'loading' || isLoading) {
     return (
@@ -465,6 +565,13 @@ export default function Lists() {
                 <span className="text-sm sm:text-base">Statistiques</span>
               </button>
             )}
+            <button
+              onClick={() => setShowCategoryManager(true)}
+              className="bg-amber-600 text-white hover:bg-amber-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium inline-flex items-center justify-center space-x-2 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              <Tag className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Catégories</span>
+            </button>
             <label className={`bg-green-600 text-white hover:bg-green-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-medium inline-flex items-center justify-center space-x-2 transition-all shadow-lg hover:shadow-xl ${isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}>
               <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="text-sm sm:text-base">Importer une liste</span>
@@ -520,6 +627,36 @@ export default function Lists() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">Moy. / liste</div>
               </div>
             </div>
+
+            {/* Statistiques par catégorie */}
+            {stats.categoryStats.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Par Catégorie
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {stats.categoryStats.map(stat => (
+                    <div
+                      key={stat.id}
+                      className="glass rounded-xl p-4 flex items-center gap-3"
+                    >
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: stat.color || '#3B82F6' }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 dark:text-white truncate">
+                          {stat.name}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {stat.listsCount} liste{stat.listsCount > 1 ? 's' : ''} • {stat.albumsCount} album{stat.albumsCount > 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -555,7 +692,7 @@ export default function Lists() {
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                   <span className="text-sm font-medium">Filtres et tri</span>
-                  {(filterPeriod !== 'all' || filterVisibility !== 'all' || searchQuery) && (
+                  {(filterPeriod !== 'all' || filterVisibility !== 'all' || filterCategory !== 'all' || searchQuery) && (
                     <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
                       Actifs
                     </span>
@@ -633,6 +770,13 @@ export default function Lists() {
                     <span className="text-sm text-gray-600 dark:text-gray-400">
                       {selectedLists.size} sélectionnée{selectedLists.size > 1 ? 's' : ''}
                     </span>
+                    <button
+                      onClick={() => setShowCategorySelector(true)}
+                      className="px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center gap-1"
+                    >
+                      <Tag className="h-3.5 w-3.5" />
+                      <span>Catégorie</span>
+                    </button>
                     <button
                       onClick={() => toggleVisibilitySelected(true)}
                       className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-1"
@@ -740,6 +884,25 @@ export default function Lists() {
                       <option value="all">Toutes</option>
                       <option value="public">Publiques</option>
                       <option value="private">Privées</option>
+                    </select>
+                  </div>
+
+                  {/* Filtre par catégorie */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Catégorie
+                    </label>
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+                    >
+                      <option value="all">Toutes les catégories</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -961,6 +1124,26 @@ export default function Lists() {
                             {list.period}
                           </div>
                         )}
+
+                        {/* Catégories */}
+                        {list.categories && list.categories.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {list.categories.slice(0, 2).map(({ category }) => (
+                              <span
+                                key={category.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
+                                style={{ backgroundColor: category.color || '#3B82F6' }}
+                              >
+                                {category.name}
+                              </span>
+                            ))}
+                            {list.categories.length > 2 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                                +{list.categories.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Actions footer */}
@@ -1059,6 +1242,20 @@ export default function Lists() {
                             </>
                           )}
                         </div>
+                        {/* Catégories */}
+                        {list.categories && list.categories.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {list.categories.map(({ category }) => (
+                              <span
+                                key={category.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
+                                style={{ backgroundColor: category.color || '#3B82F6' }}
+                              >
+                                {category.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {/* Badge visibilité */}
@@ -1135,6 +1332,7 @@ export default function Lists() {
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white hidden md:table-cell">Description</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Albums</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white hidden lg:table-cell">Période</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white hidden xl:table-cell">Catégories</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Visibilité</th>
                         <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">Actions</th>
                       </tr>
@@ -1195,6 +1393,23 @@ export default function Lists() {
                           <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden lg:table-cell">
                             {list.period || '-'}
                           </td>
+                          <td className="px-4 py-3 hidden xl:table-cell">
+                            {list.categories && list.categories.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {list.categories.map(({ category }) => (
+                                  <span
+                                    key={category.id}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                                    style={{ backgroundColor: category.color || '#3B82F6' }}
+                                  >
+                                    {category.name}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
+                            )}
+                          </td>
                           <td className="px-4 py-3">
                             {list.isPublic ? (
                               <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded text-xs font-medium text-green-600 dark:text-green-400">
@@ -1236,6 +1451,92 @@ export default function Lists() {
           </>
         )}
       </div>
+
+      {/* Category Manager Modal */}
+      <CategoryManager
+        isOpen={showCategoryManager}
+        onClose={() => setShowCategoryManager(false)}
+        onCategoriesChange={() => {
+          fetchCategories()
+          fetchLists()
+        }}
+      />
+
+      {/* Modal de sélection de catégorie pour association en batch */}
+      {showCategorySelector && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Associer à une catégorie
+                </h2>
+                <button
+                  onClick={() => setShowCategorySelector(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                {selectedLists.size} liste(s) sélectionnée(s)
+              </p>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {categories.length === 0 ? (
+                <div className="text-center py-8">
+                  <Tag className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Aucune catégorie disponible.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowCategorySelector(false)
+                      setShowCategoryManager(true)
+                    }}
+                    className="mt-4 text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                  >
+                    Créer une catégorie
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => addCategoryToSelected(category.id)}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group"
+                    >
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold"
+                        style={{ backgroundColor: category.color || '#6B7280' }}
+                      >
+                        {category.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                          {category.name}
+                        </div>
+                      </div>
+                      <Tag className="h-4 w-4 text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setShowCategorySelector(false)}
+                className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
