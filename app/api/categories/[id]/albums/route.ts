@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // GET - Récupérer tous les albums d'une catégorie
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function GET(
       )
     }
 
-    const categoryId = params.id
+    const { id: categoryId } = await params
 
     // Vérifier que la catégorie appartient bien à l'utilisateur
     const category = await prisma.category.findFirst({
