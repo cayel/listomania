@@ -40,13 +40,23 @@ export default function Explore() {
   const [filterPeriod, setFilterPeriod] = useState<string>('')
   const [showFilters, setShowFilters] = useState(false)
 
+  // Charger les listes au montage et quand les filtres changent
   useEffect(() => {
     fetchLists()
-  }, [])
+  }, [searchQuery, filterPeriod, sortBy, sortOrder])
 
   const fetchLists = async () => {
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/public/lists?limit=12')
+      const params = new URLSearchParams({
+        limit: '50',
+        ...(searchQuery && { search: searchQuery }),
+        ...(filterPeriod && { period: filterPeriod }),
+        sortBy,
+        sortOrder
+      })
+      
+      const response = await fetch(`/api/public/lists?${params}`)
       if (response.ok) {
         const data = await response.json()
         setLists(data.lists)
@@ -59,6 +69,26 @@ export default function Explore() {
     }
   }
 
+  // Extraction des périodes uniques depuis l'API
+  useEffect(() => {
+    const fetchPeriods = async () => {
+      try {
+        const response = await fetch('/api/public/lists?limit=1000')
+        if (response.ok) {
+          const data = await response.json()
+          const periods = data.lists
+            .map((list: any) => list.period)
+            .filter((period: string) => !!period)
+          const unique = Array.from(new Set(periods)).sort()
+          // Stocker dans un state si nécessaire
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des périodes:', error)
+      }
+    }
+    fetchPeriods()
+  }, [])
+
   // Extraction des périodes uniques
   const uniquePeriods = useMemo(() => {
     const periods = lists
@@ -66,54 +96,6 @@ export default function Explore() {
       .filter((period): period is string => !!period)
     return Array.from(new Set(periods)).sort()
   }, [lists])
-
-  // Filtrage et tri des listes
-  const filteredAndSortedLists = useMemo(() => {
-    let result = [...lists]
-
-    // Filtre par recherche textuelle
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(list => 
-        list.title.toLowerCase().includes(query) ||
-        list.description?.toLowerCase().includes(query) ||
-        list.user.name?.toLowerCase().includes(query) ||
-        list.period?.toLowerCase().includes(query)
-      )
-    }
-
-    // Filtre par période
-    if (filterPeriod) {
-      result = result.filter(list => list.period === filterPeriod)
-    }
-
-    // Tri
-    result.sort((a, b) => {
-      let comparison = 0
-
-      switch (sortBy) {
-        case 'title':
-          comparison = a.title.localeCompare(b.title)
-          break
-        case 'albums':
-          comparison = a._count.listAlbums - b._count.listAlbums
-          break
-        case 'period':
-          const periodA = a.period || ''
-          const periodB = b.period || ''
-          comparison = periodA.localeCompare(periodB)
-          break
-        case 'updated':
-        default:
-          comparison = 0 // Par défaut, l'ordre de l'API
-          break
-      }
-
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
-
-    return result
-  }, [lists, searchQuery, filterPeriod, sortBy, sortOrder])
 
   const toggleSortOrder = () => {
     setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
@@ -269,9 +251,9 @@ export default function Explore() {
             {/* Compteur de résultats */}
             <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
               <span>
-                {filteredAndSortedLists.length === lists.length
+                {lists.length === lists.length
                   ? `${lists.length} liste${lists.length > 1 ? 's' : ''}`
-                  : `${filteredAndSortedLists.length} liste${filteredAndSortedLists.length > 1 ? 's' : ''} sur ${lists.length}`
+                  : `${lists.length} liste${lists.length > 1 ? 's' : ''} sur ${lists.length}`
                 }
               </span>
               {hasActiveFilters && (
@@ -295,7 +277,7 @@ export default function Explore() {
               Créer la première liste publique
             </Link>
           </div>
-        ) : filteredAndSortedLists.length === 0 ? (
+        ) : lists.length === 0 ? (
           <div className="text-center py-16 glass rounded-3xl">
             <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
               Aucune liste ne correspond à vos critères de recherche.
@@ -309,7 +291,7 @@ export default function Explore() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {filteredAndSortedLists.map((list) => (
+            {lists.map((list) => (
               <Link
                 key={list.id}
                 href={`/lists/${list.id}`}

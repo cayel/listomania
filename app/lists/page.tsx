@@ -122,13 +122,6 @@ export default function Lists() {
     }
   }, [status, router])
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchLists()
-      fetchCategories()
-    }
-  }, [status])
-
   const fetchLists = useCallback(async () => {
     try {
       const response = await fetch('/api/lists')
@@ -154,6 +147,15 @@ export default function Lists() {
       console.error('Erreur lors du chargement des catégories:', error)
     }
   }, [])
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      // Paralléliser les requêtes pour améliorer les performances
+      Promise.all([fetchLists(), fetchCategories()]).catch(error => {
+        console.error('Erreur lors du chargement initial:', error)
+      })
+    }
+  }, [status, fetchLists, fetchCategories])
 
   const handleDeleteClick = useCallback((id: string, title: string) => {
     setDeleteConfirm({ id, title })

@@ -16,116 +16,171 @@ export async function GET() {
 
     const userId = session.user.id
 
-    // Récupérer toutes les listes de l'utilisateur avec albums
-    const lists = await prisma.list.findMany({
-      where: { userId },
-      include: {
-        listAlbums: {
-          include: {
-            album: true
+    // Optimisation: Utiliser des requêtes agrégées au lieu de charger toutes les données
+    // Statistiques de base - Paralléliser les requêtes
+    const [
+      totalLists,
+      publicLists,
+      listsByPeriodRaw,
+      listsWithAlbumCount,
+      albumYearsRaw,
+      topArtistsRaw,
+      topAlbumsRaw,
+      uniqueAlbumsCount,
+      oldestListData,
+      newestListData
+    ] = await Promise.all([
+      // Nombre total de listes
+      prisma.list.count({ where: { userId } }),
+      
+      // Nombre de listes publiques
+      prisma.list.count({ where: { userId, isPublic: true } }),
+      
+      // Listes groupées par période
+      prisma.list.groupBy({
+        by: ['period'],
+        where: { userId, period: { not: null } },
+        _count: { period: true }
+      }),
+      
+      // Liste avec le plus d'albums
+      prisma.list.findMany({
+        where: { userId },
+        select: {
+          title: true,
+          _count: { select: { listAlbums: true } }
+        },
+        orderBy: { listAlbums: { _count: 'desc' } },
+        take: 1
+      }),
+      
+      // Années des albums pour statistiques
+      prisma.album.findMany({
+        where: {
+          listAlbums: {
+            some: { list: { userId } }
+          },
+          year: { not: null }
+        },
+        select: { year: true }
+      }),
+      
+      // Top 10 artistes
+      prisma.album.groupBy({
+        by: ['artist'],
+        where: {
+          listAlbums: {
+            some: { list: { userId } }
+          }
+        },
+        _count: { artist: true },
+        orderBy: { _count: { artist: 'desc' } },
+        take: 10
+      }),
+      
+      // Top 10 albums
+      prisma.album.findMany({
+        where: {
+          listAlbums: {
+            some: { list: { userId } }
+          }
+        },
+        select: {
+          discogsId: true,
+          title: true,
+          artist: true,
+          _count: {
+            select: { listAlbums: true }
+          }
+        },
+        orderBy: {
+          listAlbums: { _count: 'desc' }
+        },
+        take: 10
+      }),
+      
+      // Nombre d'albums uniques
+      prisma.album.count({
+        where: {
+          listAlbums: {
+            some: { list: { userId } }
           }
         }
-      }
-    })
+      }),
+      
+      // Première liste créée
+      prisma.list.findFirst({
+        where: { userId },
+        select: { createdAt: true },
+        orderBy: { createdAt: 'asc' }
+      }),
+      
+      // Dernière liste mise à jour
+      prisma.list.findFirst({
+        where: { userId },
+        select: { updatedAt: true },
+        orderBy: { updatedAt: 'desc' }
+      })
+    ])
 
-    // Statistiques de base
-    const totalLists = lists.length
-    const totalAlbums = lists.reduce((sum, list) => sum + list.listAlbums.length, 0)
-    const publicLists = lists.filter(l => l.isPublic).length
-    const privateLists = totalLists - publicLists
-
-    // Listes par période
+    // Traitement des listes par période
     const listsByPeriod: Record<string, number> = {}
-    lists.forEach(list => {
-      if (list.period) {
-        listsByPeriod[list.period] = (listsByPeriod[list.period] || 0) + 1
+    listsByPeriodRaw.forEach(item => {
+      if (item.period) {
+        listsByPeriod[item.period] = item._count.period
       }
     })
 
-    // Albums par décennie
+    // Traitement des années d'albums
     const albumsByDecade: Record<string, number> = {}
     const albumsByYear: Record<string, number> = {}
-    lists.forEach(list => {
-      list.listAlbums.forEach(la => {
-        if (la.album.year) {
-          const decade = `${Math.floor(la.album.year / 10) * 10}s`
-          albumsByDecade[decade] = (albumsByDecade[decade] || 0) + 1
-          albumsByYear[la.album.year.toString()] = (albumsByYear[la.album.year.toString()] || 0) + 1
-        }
-      })
+    albumYearsRaw.forEach(album => {
+      if (album.year) {
+        const decade = `${Math.floor(album.year / 10) * 10}s`
+        albumsByDecade[decade] = (albumsByDecade[decade] || 0) + 1
+        albumsByYear[album.year.toString()] = (albumsByYear[album.year.toString()] || 0) + 1
+      }
     })
 
-    // Artistes les plus présents (top 10)
-    const artistCounts: Record<string, number> = {}
-    lists.forEach(list => {
-      list.listAlbums.forEach(la => {
-        artistCounts[la.album.artist] = (artistCounts[la.album.artist] || 0) + 1
-      })
+    // Top artistes
+    const topArtists = topArtistsRaw.map(item => ({
+      artist: item.artist,
+      count: item._count.artist
+    }))
+
+    // Top albums
+    const topAlbums = topAlbumsRaw.map(album => ({
+      title: album.title,
+      artist: album.artist,
+      count: album._count.listAlbums
+    }))
+
+    // Calcul des statistiques finales
+    const privateLists = totalLists - publicLists
+    
+    // Nombre total d'albums (avec doublons entre listes)
+    const totalAlbumsCount = await prisma.listAlbum.count({
+      where: { list: { userId } }
     })
-    const topArtists = Object.entries(artistCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([artist, count]) => ({ artist, count }))
+    
+    const avgAlbumsPerList = totalLists > 0 ? Math.round(totalAlbumsCount / totalLists) : 0
 
-    // Albums les plus présents dans différentes listes
-    const albumCounts: Record<string, { title: string, artist: string, count: number }> = {}
-    lists.forEach(list => {
-      list.listAlbums.forEach(la => {
-        const key = la.album.discogsId
-        if (!albumCounts[key]) {
-          albumCounts[key] = {
-            title: la.album.title,
-            artist: la.album.artist,
-            count: 0
-          }
-        }
-        albumCounts[key].count++
-      })
-    })
-    const topAlbums = Object.values(albumCounts)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10)
+    const longestList = listsWithAlbumCount[0] 
+      ? { title: listsWithAlbumCount[0].title, length: listsWithAlbumCount[0]._count.listAlbums }
+      : { title: '', length: 0 }
 
-    // Liste la plus longue
-    const longestList = lists.reduce((max, list) => 
-      list.listAlbums.length > max.length 
-        ? { title: list.title, length: list.listAlbums.length }
-        : max
-    , { title: '', length: 0 })
-
-    // Moyenne d'albums par liste
-    const avgAlbumsPerList = totalLists > 0 ? Math.round(totalAlbums / totalLists) : 0
-
-    // Albums uniques (sans doublons entre listes)
-    const uniqueAlbumIds = new Set(lists.flatMap(l => l.listAlbums.map(la => la.album.discogsId)))
-    const uniqueAlbums = uniqueAlbumIds.size
-
-    // Albums les plus anciens et les plus récents
-    const allYears = lists.flatMap(l => 
-      l.listAlbums.map(la => la.album.year).filter((y): y is number => y !== null)
-    )
+    const allYears = albumYearsRaw.map(a => a.year).filter((y): y is number => y !== null)
     const oldestYear = allYears.length > 0 ? Math.min(...allYears) : null
     const newestYear = allYears.length > 0 ? Math.max(...allYears) : null
 
-    // Date de création de la première liste
-    const oldestListDate = lists.length > 0 
-      ? lists.reduce((oldest, list) => 
-          list.createdAt < oldest ? list.createdAt : oldest
-        , lists[0].createdAt)
-      : null
-
-    // Date de la dernière mise à jour
-    const newestListDate = lists.length > 0
-      ? lists.reduce((newest, list) =>
-          list.updatedAt > newest ? list.updatedAt : newest
-        , lists[0].updatedAt)
-      : null
+    const oldestListDate = oldestListData?.createdAt || null
+    const newestListDate = newestListData?.updatedAt || null
 
     return NextResponse.json({
       overview: {
         totalLists,
-        totalAlbums,
-        uniqueAlbums,
+        totalAlbums: totalAlbumsCount,
+        uniqueAlbums: uniqueAlbumsCount,
         publicLists,
         privateLists,
         avgAlbumsPerList,

@@ -6,6 +6,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period')
+    const search = searchParams.get('search')
+    const sortBy = searchParams.get('sortBy') || 'updated'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
 
@@ -17,9 +20,43 @@ export async function GET(request: Request) {
       where.period = period
     }
 
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } }
+      ]
+    }
+
+    // Configuration du tri
+    let orderBy: any = { updatedAt: 'desc' }
+    switch (sortBy) {
+      case 'title':
+        orderBy = { title: sortOrder }
+        break
+      case 'albums':
+        orderBy = { listAlbums: { _count: sortOrder } }
+        break
+      case 'period':
+        orderBy = { period: sortOrder }
+        break
+      case 'updated':
+      default:
+        orderBy = { updatedAt: sortOrder }
+        break
+    }
+
     const lists = await prisma.list.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        period: true,
+        isPublic: true,
+        isRanked: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             id: true,
@@ -27,13 +64,20 @@ export async function GET(request: Request) {
           }
         },
         listAlbums: {
-          include: {
-            album: true
+          take: 5,
+          select: {
+            album: {
+              select: {
+                id: true,
+                coverImage: true,
+                title: true,
+                artist: true
+              }
+            }
           },
           orderBy: {
             position: 'asc'
-          },
-          take: 5 // Seulement les 5 premiers albums pour l'aperçu
+          }
         },
         _count: {
           select: {
@@ -41,9 +85,7 @@ export async function GET(request: Request) {
           }
         }
       },
-      orderBy: {
-        updatedAt: 'desc'
-      },
+      orderBy,
       take: limit,
       skip: offset
     })

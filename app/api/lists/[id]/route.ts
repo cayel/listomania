@@ -26,10 +26,27 @@ export async function GET(
     // Récupérer le token de partage depuis l'URL
     const { searchParams } = new URL(request.url)
     const shareToken = searchParams.get('token')
+    const limit = searchParams.get('limit')
+    const skip = searchParams.get('skip')
+
+    // Limiter le chargement des albums pour améliorer les performances
+    const albumLimit = limit ? parseInt(limit) : 50
+    const albumSkip = skip ? parseInt(skip) : 0
 
     const list = await prisma.list.findUnique({
       where: { id: listId },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        period: true,
+        sourceUrl: true,
+        shareToken: true,
+        isPublic: true,
+        isRanked: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             id: true,
@@ -38,11 +55,32 @@ export async function GET(
           }
         },
         listAlbums: {
-          include: {
-            album: true
+          take: albumLimit,
+          skip: albumSkip,
+          select: {
+            id: true,
+            position: true,
+            album: {
+              select: {
+                id: true,
+                discogsId: true,
+                discogsType: true,
+                discogsArtistId: true,
+                artist: true,
+                title: true,
+                year: true,
+                coverImage: true,
+                createdAt: true
+              }
+            }
           },
           orderBy: {
             position: 'asc'
+          }
+        },
+        _count: {
+          select: {
+            listAlbums: true
           }
         }
       }
