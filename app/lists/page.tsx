@@ -1145,13 +1145,15 @@ export default function Lists() {
                         {list.categories && list.categories.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {list.categories.slice(0, 2).map(({ category }) => (
-                              <span
+                              <Link
                                 key={category.id}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
+                                href={`/categories/${category.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-white hover:opacity-80 transition-opacity"
                                 style={{ backgroundColor: category.color || '#3B82F6' }}
                               >
                                 {category.name}
-                              </span>
+                              </Link>
                             ))}
                             {list.categories.length > 2 && (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">

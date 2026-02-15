@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Plus, Edit2, Trash2, Tag } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { X, Plus, Edit2, Trash2, Tag, Eye } from 'lucide-react'
 
 interface Category {
   id: string
@@ -30,6 +31,7 @@ const DEFAULT_COLORS = [
 ]
 
 export function CategoryManager({ isOpen, onClose, onCategoriesChange }: CategoryManagerProps) {
+  const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -307,6 +309,16 @@ export function CategoryManager({ isOpen, onClose, onCategoriesChange }: Categor
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         {category._count?.lists || 0} liste{(category._count?.lists || 0) > 1 ? 's' : ''}
                       </span>
+                      <button
+                        onClick={() => {
+                          router.push(`/categories/${category.id}`)
+                          onClose()
+                        }}
+                        className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded transition-colors"
+                        title="Voir tous les albums"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => startEdit(category)}
                         className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded transition-colors"
