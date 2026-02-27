@@ -219,6 +219,41 @@ export default function ReportsPage() {
       })
     })
 
+    // Calculer les statistiques
+    const artistCount: { [key: string]: number } = {}
+    const yearCount: { [key: string]: number } = {}
+    
+    reportData.lists.forEach((list: any) => {
+      list.albums.forEach((album: any) => {
+        artistCount[album.artist] = (artistCount[album.artist] || 0) + 1
+        if (album.year) {
+          yearCount[album.year] = (yearCount[album.year] || 0) + 1
+        }
+      })
+    })
+
+    const topArtists = Object.entries(artistCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
+    const topYears = Object.entries(yearCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
+    // Ajouter les statistiques
+    csv += '\n\n'
+    csv += 'STATISTIQUES\n\n'
+    csv += 'Top Artistes,Nombre d\'albums\n'
+    topArtists.forEach(([artist, count]) => {
+      csv += `"${artist.replace(/"/g, '""')}",${count}\n`
+    })
+
+    csv += '\n'
+    csv += 'Années les plus représentées,Nombre d\'albums\n'
+    topYears.forEach(([year, count]) => {
+      csv += `${year},${count}\n`
+    })
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
@@ -266,6 +301,45 @@ export default function ReportsPage() {
         text += '\n'
       })
       text += '\n'
+    })
+
+    // Calculer les statistiques
+    const artistCountTxt: { [key: string]: number } = {}
+    const yearCountTxt: { [key: string]: number } = {}
+    
+    reportData.lists.forEach((list: any) => {
+      list.albums.forEach((album: any) => {
+        artistCountTxt[album.artist] = (artistCountTxt[album.artist] || 0) + 1
+        if (album.year) {
+          yearCountTxt[album.year] = (yearCountTxt[album.year] || 0) + 1
+        }
+      })
+    })
+
+    const topArtistsTxt = Object.entries(artistCountTxt)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
+    const topYearsTxt = Object.entries(yearCountTxt)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
+    // Ajouter les statistiques
+    text += '\n═══════════════════════════════════════════════════════\n'
+    text += '                   STATISTIQUES\n'
+    text += '═══════════════════════════════════════════════════════\n\n'
+
+    text += 'TOP ARTISTES:\n'
+    text += '───────────────────────────────────────────────────────\n'
+    topArtistsTxt.forEach(([artist, count], idx) => {
+      text += `${(idx + 1).toString().padStart(3, ' ')}. ${artist.padEnd(40, ' ')} ${count} album${count > 1 ? 's' : ''}\n`
+    })
+
+    text += '\n'
+    text += 'ANNÉES LES PLUS REPRÉSENTÉES:\n'
+    text += '───────────────────────────────────────────────────────\n'
+    topYearsTxt.forEach(([year, count], idx) => {
+      text += `${(idx + 1).toString().padStart(3, ' ')}. ${year.padEnd(40, ' ')} ${count} album${count > 1 ? 's' : ''}\n`
     })
 
     text += '\n═══════════════════════════════════════════════════════\n'
@@ -489,6 +563,63 @@ export default function ReportsPage() {
             font-size: 0.7em;
             margin-top: 3px;
         }
+        .stats-section {
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .stats-section h2 {
+            color: #ffffff;
+            font-size: 1.3em;
+            font-weight: normal;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #404040;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .stat-block {
+            background: #1f1f1f;
+            border: 1px solid #333333;
+            padding: 15px;
+        }
+        .stat-block h3 {
+            color: #b0b0b0;
+            font-size: 1em;
+            font-weight: normal;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            color: #e0e0e0;
+            font-size: 0.9em;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #ffffff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+        .stat-value {
+            color: #808080;
+            font-family: monospace;
+            margin-left: 10px;
+            flex: 0 0 auto;
+        }
         .footer {
             text-align: center;
             margin-top: 20px;
@@ -661,7 +792,66 @@ export default function ReportsPage() {
 `;
     })
 
+    // Calculer les statistiques
+    const artistCount: { [key: string]: number } = {}
+    const yearCount: { [key: string]: number } = {}
+    
+    reportData.lists.forEach((list: any) => {
+      list.albums.forEach((album: any) => {
+        // Compter les artistes
+        artistCount[album.artist] = (artistCount[album.artist] || 0) + 1
+        // Compter les années
+        if (album.year) {
+          yearCount[album.year] = (yearCount[album.year] || 0) + 1
+        }
+      })
+    })
+
+    // Trier les artistes par nombre d'occurrences
+    const topArtists = Object.entries(artistCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
+    // Trier les années par nombre d'occurrences
+    const topYears = Object.entries(yearCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+
     html += `
+    <div class="stats-section">
+        <h2>// Statistiques de la sélection</h2>
+        <div class="stats-grid">
+            <div class="stat-block">
+                <h3>Top Artistes</h3>
+`
+    topArtists.forEach(([artist, count]) => {
+      html += `
+                <div class="stat-item">
+                    <span class="stat-label">${artist}</span>
+                    <span class="stat-value">${count} album${count > 1 ? 's' : ''}</span>
+                </div>
+`
+    })
+
+    html += `
+            </div>
+            <div class="stat-block">
+                <h3>Années les plus représentées</h3>
+`
+    topYears.forEach(([year, count]) => {
+      html += `
+                <div class="stat-item">
+                    <span class="stat-label">${year}</span>
+                    <span class="stat-value">${count} album${count > 1 ? 's' : ''}</span>
+                </div>
+`
+    })
+
+    html += `
+            </div>
+        </div>
+    </div>
+
     <div class="footer">
         Rapport généré par RankList • ${new Date().getFullYear()}
     </div>
