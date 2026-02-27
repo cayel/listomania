@@ -40,6 +40,38 @@ Bienvenue dans la documentation de Ranklist ! Cette page regroupe tous les guide
 
 ## 🎵 Fonctionnalités spécifiques
 
+### Rapports
+
+- **[REPORTS-FEATURE.md](REPORTS-FEATURE.md)** - Génération de rapports de qualité
+  - Sélection multiple de listes
+  - Export en HTML, CSV et texte
+  - Rapports formatés et professionnels
+  - Statistiques et analyses
+  - Filtrage avancé et tri personnalisable
+
+- **[GUIDE-RAPPORTS.md](GUIDE-RAPPORTS.md)** - Guide utilisateur complet
+  - Tutoriel pas à pas
+  - Exemples de cas d'usage
+  - Conseils et astuces
+  - Dépannage et FAQ
+
+- **[EXEMPLES-FILTRES-RAPPORTS.md](EXEMPLES-FILTRES-RAPPORTS.md)** - Exemples pratiques de filtrage
+  - 7 scénarios d'utilisation détaillés
+  - Combinaisons de filtres avancées
+  - Cas d'usage pour différents besoins
+
+- **[ARCHITECTURE-FILTRES-RAPPORTS.md](ARCHITECTURE-FILTRES-RAPPORTS.md)** - Architecture technique
+  - Gestion d'état et performance
+  - Optimisations avec useMemo
+  - Extensibilité et bonnes pratiques
+  - Guide pour développeurs
+
+- **[RAPPORT-HTML-POCHETTES.md](RAPPORT-HTML-POCHETTES.md)** - Design visuel avec pochettes
+  - Aperçu du design en grille
+  - Caractéristiques du layout responsive
+  - Gestion des images et fallbacks
+  - Comparaison avant/après
+
 ### Export de playlists
 
 - **[PLAYLIST-EXPORT.md](PLAYLIST-EXPORT.md)** - Guide utilisateur export playlists
@@ -109,6 +141,7 @@ Bienvenue dans la documentation de Ranklist ! Cette page regroupe tous les guide
 - JSON (complet) - [README](../README.md#importexport)
 - PNG (image) - [README](../README.md#importexport)
 - Playlists M3U8/CSV - [PLAYLIST-EXPORT](PLAYLIST-EXPORT.md)
+- Rapports multi-listes - [REPORTS-FEATURE](REPORTS-FEATURE.md)
 
 ### Import
 - CSV (ajouter albums) - [README](../README.md#importexport)
@@ -148,6 +181,12 @@ Bienvenue dans la documentation de Ranklist ! Cette page regroupe tous les guide
 1. Lire [Guide export playlists](PLAYLIST-EXPORT.md)
 2. Suivre [Export en playlist](../README.md#exporter-en-playlist-pour-streaming)
 3. Utiliser [Soundiiz](https://soundiiz.com) ou [TuneMyMusic](https://tunemymusic.com)
+
+### Je veux générer un rapport de mes listes
+1. Accéder à la page [Rapports](/reports)
+2. Sélectionner les listes à inclure
+3. Générer et exporter dans le format souhaité (HTML, CSV, TXT)
+4. Lire [REPORTS-FEATURE](REPORTS-FEATURE.md) pour plus de détails
 
 ### Je veux contribuer au projet
 1. Lire [CONTRIBUTING.md](../CONTRIBUTING.md)
@@ -199,4 +238,4 @@ Cette documentation est maintenue avec le projet. Pour toute correction ou amél
 
 ---
 
-Dernière mise à jour : 21 janvier 2026
+Dernière mise à jour : 26 février 2026

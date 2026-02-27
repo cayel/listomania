@@ -3,7 +3,7 @@
 import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { ThemeToggle } from './theme-toggle'
-import { LogOut, ListMusic, User, Shield, Menu, X, Compass, BarChart3 } from 'lucide-react'
+import { LogOut, ListMusic, User, Shield, Menu, X, Compass, BarChart3, FileText } from 'lucide-react'
 import { useState } from 'react'
 
 export function Navbar() {
@@ -40,6 +40,13 @@ export function Navbar() {
                   className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   Communauté
+                </Link>
+                <Link
+                  href="/reports"
+                  className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <FileText className="h-4 w-4" />
+                  Rapports
                 </Link>
                 <Link
                   href="/stats"
@@ -159,6 +166,14 @@ export function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Communauté
+                </Link>
+                <Link
+                  href="/reports"
+                  className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Rapports
                 </Link>
                 <Link
                   href="/stats"

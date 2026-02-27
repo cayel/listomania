@@ -10,6 +10,70 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 ### En cours
 - (Rien en cours actuellement)
 
+## [1.8.0] - 2026-02-26
+
+### Ajouté
+- 📊 **Génération de rapports multi-listes** - Nouvelle fonctionnalité majeure
+  - Interface de sélection de listes avec cases à cocher
+  - Sélection/désélection globale en un clic
+  - Compteur en temps réel des listes sélectionnées
+  - Affichage des statistiques (total albums, nombre de listes)
+- � **Filtrage avancé des listes** - Nouvelle fonctionnalité
+  - Filtre par visibilité (toutes, publiques, privées)
+  - Filtre par catégorie (extraction dynamique des catégories existantes)
+  - Filtre par période (extraction dynamique des périodes définies)
+  - Badge indiquant le nombre de filtres actifs
+  - Bouton de réinitialisation des filtres
+- 📊 **Tri personnalisable des listes**
+  - Tri par titre (alphabétique)
+  - Tri par date de modification (récentes en premier)
+  - Tri par nombre d'albums
+  - Tri par période (chronologique)
+  - Ordre croissant ou décroissant
+  - Le tri est appliqué au rapport généré
+- 📄 **Export HTML professionnel**
+  - Design moderne avec dégradés colorés
+  - **Grille visuelle avec pochettes d'albums**
+  - Cartes d'albums interactives avec effet hover
+  - Layout responsive et adaptatif
+  - Optimisé pour l'impression et conversion PDF
+  - En-têtes de liste avec description et période
+  - Fallback élégant avec icône musicale si image indisponible
+- 📊 **Export CSV pour analyse**
+  - Format compatible Excel/Google Sheets
+  - Colonnes: Liste, Artiste, Titre, Année
+  - Échappement automatique des caractères spéciaux
+  - Encodage UTF-8 pour les accents
+- 📝 **Export Texte (.txt)**
+  - Format ASCII élégant avec séparateurs visuels
+  - Universel et léger
+  - Idéal pour archivage long terme
+- 🔗 **Intégration navigation**
+  - Nouveau lien "Rapports" dans la navbar (desktop + mobile)
+  - Icône FileText pour identification visuelle
+  - Accessible à `/reports`
+- 🛡️ **Sécurité et validation**
+  - Vérification des permissions utilisateur
+  - Validation des IDs de listes
+  - Protection contre accès non autorisé
+- ✅ **Tests unitaires complets**
+  - 6 tests pour la génération de rapports
+  - Tests de formatage CSV et dates
+  - Tests de calcul statistiques
+- 📚 **Documentation complète**
+  - `REPORTS-FEATURE.md` - Documentation technique
+  - `GUIDE-RAPPORTS.md` - Guide utilisateur détaillé
+  - Mise à jour du README et index docs
+
+### Technique
+- Nouvelle route `/app/reports/page.tsx` avec interface moderne
+- API `/api/reports/generate` pour génération données avec support tri
+- API `/api/reports/export-pdf` pour préparation export PDF
+- Utilisation de `useMemo` pour filtrage et tri performant côté client
+- Extraction dynamique des catégories et périodes uniques
+- Génération exports côté client pour performance
+- Gestion des états loading et erreurs
+
 ## [1.7.0] - 2026-01-30
 
 ### Ajouté
