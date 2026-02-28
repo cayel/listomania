@@ -114,7 +114,7 @@ ListAlbum (table de liaison)
    - Session JWT
    - Vérification password
 
-3. **Protection** : `proxy.ts`
+3. **Protection** : Routes protégées via NextAuth
    - Vérifie session pour routes protégées
    - Redirect vers `/auth/signin` si non authentifié
 
@@ -343,7 +343,7 @@ npm test -- discogs
 - ✅ **Import playlists** : Compatible avec Soundiiz, TuneMyMusic, FreeYourMusic
 
 ### Infrastructure
-- ✅ Migration `middleware.ts` → `proxy.ts` (Next.js 16)
+- ✅ Authentification avec NextAuth (Next.js 16)
 - ✅ Export/Import JSON complet (avec métadonnées)
 - ✅ Partage sécurisé par token
 - ✅ Gestion homonymes artistes (discogsArtistId)

@@ -1,10 +1,12 @@
 // Restaurer les données de production vers local
 import { PrismaClient } from '@prisma/client'
 
+// ⚠️ IMPORTANT: Définir ces variables d'environnement avant d'exécuter
+// Ne JAMAIS hardcoder les credentials dans le code
 const prodPrisma = new PrismaClient({
   datasources: {
     db: {
-      url: "postgres://e091f79065acb83ecab43844cca57c9a47bba956122f74c5ac578f6a6b66ee28:sk_NCePNYQif9fBFDl5SX4Rb@db.prisma.io:5432/postgres?sslmode=require"
+      url: process.env.DATABASE_URL_PRODUCTION
     }
   }
 })
@@ -12,12 +14,21 @@ const prodPrisma = new PrismaClient({
 const localPrisma = new PrismaClient({
   datasources: {
     db: {
-      url: "postgresql://postgres:Jarvis71$@localhost:5432/ranklist"
+      url: process.env.DATABASE_URL
     }
   }
 })
 
 async function restoreFromProduction() {
+  // Vérifier que les variables d'environnement sont définies
+  if (!process.env.DATABASE_URL_PRODUCTION || !process.env.DATABASE_URL) {
+    console.error('❌ Erreur: Variables d\'environnement manquantes')
+    console.log('💡 Définir:')
+    console.log('   export DATABASE_URL_PRODUCTION="..."')
+    console.log('   export DATABASE_URL="..."')
+    process.exit(1)
+  }
+
   try {
     console.log('🔄 Récupération des données de production...\n')
     

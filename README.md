@@ -299,7 +299,6 @@ ranklist/
 ├── public/                    # Assets statiques
 ├── .env                       # Variables d'environnement
 ├── .env.example               # Template variables
-├── proxy.ts                   # Proxy Next.js (auth & routing)
 ├── next.config.ts             # Config Next.js
 ├── tailwind.config.ts         # Config Tailwind
 ├── tsconfig.json              # Config TypeScript

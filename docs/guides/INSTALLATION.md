@@ -304,7 +304,7 @@ PORT=3001 npm run dev
 
 **Cause** : CORS ou proxy manquant
 
-**Solution** : Vérifier [proxy.ts](../../proxy.ts) et configuration next.config.ts
+**Solution** : Vérifier configuration next.config.ts (images.remotePatterns)
 
 ## 📚 Ressources
 

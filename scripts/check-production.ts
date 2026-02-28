@@ -1,15 +1,23 @@
 // Vérifier les données en production
 import { PrismaClient } from '@prisma/client'
 
+// ⚠️ IMPORTANT: Définir DATABASE_URL dans les variables d'environnement
+// Ne JAMAIS hardcoder les credentials de production dans le code
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: "postgres://e091f79065acb83ecab43844cca57c9a47bba956122f74c5ac578f6a6b66ee28:sk_NCePNYQif9fBFDl5SX4Rb@db.prisma.io:5432/postgres?sslmode=require"
+      url: process.env.DATABASE_URL_PRODUCTION
     }
   }
 })
 
 async function checkProductionData() {
+  if (!process.env.DATABASE_URL_PRODUCTION) {
+    console.error('❌ Erreur: DATABASE_URL_PRODUCTION non définie')
+    console.log('💡 Définir: export DATABASE_URL_PRODUCTION="..."')
+    process.exit(1)
+  }
+
   try {
     const users = await prisma.user.count()
     const lists = await prisma.list.count()
