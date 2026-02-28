@@ -13,12 +13,86 @@ jest.mock('@/lib/auth', () => ({
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     list: {
-      findMany: jest.fn()
+      findMany: jest.fn(),
+      count: jest.fn(),
+      groupBy: jest.fn(),
+      findFirst: jest.fn()
+    },
+    album: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+      groupBy: jest.fn()
+    },
+    listAlbum: {
+      count: jest.fn()
     }
   }
 }))
 
 const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>
+
+// Helper pour configurer les mocks Prisma
+function setupPrismaMocks(options: {
+  totalLists?: number
+  publicLists?: number
+  listsByPeriod?: Array<{ period: string; _count: { period: number } }>
+  listsWithAlbumCount?: Array<{ title: string; _count: { listAlbums: number } }>
+  albumYears?: Array<{ year: number | null }>
+  topArtists?: Array<{ artist: string; _count: { artist: number } }>
+  topAlbums?: Array<{ discogsId: string; title: string; artist: string; _count: { listAlbums: number } }>
+  uniqueAlbumsCount?: number
+  totalAlbumsCount?: number
+  oldestListData?: { createdAt: Date } | null
+  newestListData?: { updatedAt: Date } | null
+} = {}) {
+  const {
+    totalLists = 0,
+    publicLists = 0,
+    listsByPeriod = [],
+    listsWithAlbumCount = [],
+    albumYears = [],
+    topArtists = [],
+    topAlbums = [],
+    uniqueAlbumsCount = 0,
+    totalAlbumsCount = 0,
+    oldestListData = null,
+    newestListData = null
+  } = options
+
+  // Les 10 requêtes du Promise.all dans l'ordre :
+  // 1. list.count (total)
+  // 2. list.count (public)
+  ;(prisma.list.count as jest.Mock)
+    .mockResolvedValueOnce(totalLists)
+    .mockResolvedValueOnce(publicLists)
+  
+  // 3. list.groupBy (période)
+  ;(prisma.list.groupBy as jest.Mock).mockResolvedValueOnce(listsByPeriod)
+  
+  // 4. list.findMany (liste la plus longue)
+  ;(prisma.list.findMany as jest.Mock).mockResolvedValueOnce(listsWithAlbumCount)
+  
+  // 5. album.findMany (années)
+  // 6. album.groupBy (top artistes) - Mais attention groupBy est appelé une seule fois !
+  // 7. album.findMany (top albums)
+  ;(prisma.album.findMany as jest.Mock)
+    .mockResolvedValueOnce(albumYears)
+    .mockResolvedValueOnce(topAlbums)
+  
+  ;(prisma.album.groupBy as jest.Mock).mockResolvedValueOnce(topArtists)
+  
+  // 8. album.count (albums uniques)
+  ;(prisma.album.count as jest.Mock).mockResolvedValueOnce(uniqueAlbumsCount)
+  
+  // 9. list.findFirst (première liste)
+  // 10. list.findFirst (dernière liste)
+  ;(prisma.list.findFirst as jest.Mock)
+    .mockResolvedValueOnce(oldestListData)
+    .mockResolvedValueOnce(newestListData)
+  
+  // Après le Promise.all : listAlbum.count (total avec doublons)
+  ;(prisma.listAlbum.count as jest.Mock).mockResolvedValue(totalAlbumsCount)
+}
 
 describe('GET /api/user/stats', () => {
   beforeEach(() => {
@@ -40,54 +114,32 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Ma Liste 1',
-        period: '2020',
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-15'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '12345',
-              artist: 'Pink Floyd',
-              title: 'The Wall',
-              year: 1979
-            }
-          },
-          {
-            album: {
-              discogsId: '67890',
-              artist: 'The Beatles',
-              title: 'Abbey Road',
-              year: 1969
-            }
-          }
-        ]
-      },
-      {
-        id: 'list2',
-        title: 'Ma Liste 2',
-        period: '1980s',
-        isPublic: false,
-        createdAt: new Date('2024-02-01'),
-        updatedAt: new Date('2024-02-10'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '11111',
-              artist: 'Pink Floyd',
-              title: 'Dark Side of the Moon',
-              year: 1973
-            }
-          }
-        ]
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 2,
+      publicLists: 1,
+      listsByPeriod: [
+        { period: '2020', _count: { period: 1 } },
+        { period: '1980s', _count: { period: 1 } }
+      ],
+      listsWithAlbumCount: [{ title: 'Ma Liste 1', _count: { listAlbums: 2 } }],
+      albumYears: [
+        { year: 1979 },
+        { year: 1969 },
+        { year: 1973 }
+      ],
+      topArtists: [
+        { artist: 'Pink Floyd', _count: { artist: 2 } },
+        { artist: 'The Beatles', _count: { artist: 1 } }
+      ],
+      topAlbums: [
+        { discogsId: '12345', title: 'The Wall', artist: 'Pink Floyd', _count: { listAlbums: 1 } },
+        { discogsId: '67890', title: 'Abbey Road', artist: 'The Beatles', _count: { listAlbums: 1 } }
+      ],
+      uniqueAlbumsCount: 3,
+      totalAlbumsCount: 3,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-02-10') }
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -105,54 +157,22 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Liste 1',
-        period: null,
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '12345',
-              artist: 'Artist A',
-              title: 'Album A',
-              year: 2000
-            }
-          },
-          {
-            album: {
-              discogsId: '67890',
-              artist: 'Artist B',
-              title: 'Album B',
-              year: 2010
-            }
-          }
-        ]
-      },
-      {
-        id: 'list2',
-        title: 'Liste 2',
-        period: null,
-        isPublic: false,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '12345', // Même album que dans liste1
-              artist: 'Artist A',
-              title: 'Album A',
-              year: 2000
-            }
-          }
-        ]
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 2,
+      publicLists: 1,
+      listsByPeriod: [],
+      listsWithAlbumCount: [
+        { title: 'Liste 1', _count: { listAlbums: 2 } },
+        { title: 'Liste 2', _count: { listAlbums: 1 } }
+      ],
+      albumYears: [],
+      topArtists: [],
+      topAlbums: [],
+      uniqueAlbumsCount: 2,
+      totalAlbumsCount: 3,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-01-01') }
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -166,52 +186,24 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Liste',
-        period: null,
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '1',
-              artist: 'Artist',
-              title: 'Album 1960',
-              year: 1965
-            }
-          },
-          {
-            album: {
-              discogsId: '2',
-              artist: 'Artist',
-              title: 'Album 1970',
-              year: 1975
-            }
-          },
-          {
-            album: {
-              discogsId: '3',
-              artist: 'Artist',
-              title: 'Album 1970 bis',
-              year: 1979
-            }
-          },
-          {
-            album: {
-              discogsId: '4',
-              artist: 'Artist',
-              title: 'Album sans année',
-              year: null
-            }
-          }
-        ]
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 1,
+      publicLists: 1,
+      listsByPeriod: [],
+      listsWithAlbumCount: [{ title: 'Liste', _count: { listAlbums: 4 } }],
+      albumYears: [
+        { year: 1965 },
+        { year: 1975 },
+        { year: 1979 },
+        { year: null }
+      ],
+      topArtists: [],
+      topAlbums: [],
+      uniqueAlbumsCount: 4,
+      totalAlbumsCount: 4,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-01-01') }
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -227,44 +219,26 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Liste',
-        period: null,
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '1',
-              artist: 'Pink Floyd',
-              title: 'Album 1',
-              year: 1970
-            }
-          },
-          {
-            album: {
-              discogsId: '2',
-              artist: 'Pink Floyd',
-              title: 'Album 2',
-              year: 1973
-            }
-          },
-          {
-            album: {
-              discogsId: '3',
-              artist: 'The Beatles',
-              title: 'Album 3',
-              year: 1969
-            }
-          }
-        ]
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 1,
+      publicLists: 1,
+      listsByPeriod: [],
+      listsWithAlbumCount: [{ title: 'Liste', _count: { listAlbums: 3 } }],
+      albumYears: [
+        { year: 1970 },
+        { year: 1973 },
+        { year: 1969 }
+      ],
+      topArtists: [
+        { artist: 'Pink Floyd', _count: { artist: 2 } },
+        { artist: 'The Beatles', _count: { artist: 1 } }
+      ],
+      topAlbums: [],
+      uniqueAlbumsCount: 3,
+      totalAlbumsCount: 3,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-01-01') }
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -279,46 +253,24 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Liste 1',
-        period: null,
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '12345',
-              artist: 'Artist A',
-              title: 'Popular Album',
-              year: 2000
-            }
-          }
-        ]
-      },
-      {
-        id: 'list2',
-        title: 'Liste 2',
-        period: null,
-        isPublic: false,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '12345',
-              artist: 'Artist A',
-              title: 'Popular Album',
-              year: 2000
-            }
-          }
-        ]
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 2,
+      publicLists: 1,
+      listsByPeriod: [],
+      listsWithAlbumCount: [
+        { title: 'Liste 1', _count: { listAlbums: 1 } },
+        { title: 'Liste 2', _count: { listAlbums: 1 } }
+      ],
+      albumYears: [{ year: 2000 }],
+      topArtists: [{ artist: 'Artist A', _count: { artist: 2 } }],
+      topAlbums: [
+        { discogsId: '12345', title: 'Popular Album', artist: 'Artist A', _count: { listAlbums: 2 } }
+      ],
+      uniqueAlbumsCount: 1,
+      totalAlbumsCount: 2,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-01-01') }
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -336,42 +288,22 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Liste 1',
-        period: null,
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: Array(10).fill(null).map((_, i) => ({
-          album: {
-            discogsId: `id${i}`,
-            artist: 'Artist',
-            title: `Album ${i}`,
-            year: 2000
-          }
-        }))
-      },
-      {
-        id: 'list2',
-        title: 'Liste 2',
-        period: null,
-        isPublic: false,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: Array(20).fill(null).map((_, i) => ({
-          album: {
-            discogsId: `id${i + 10}`,
-            artist: 'Artist',
-            title: `Album ${i + 10}`,
-            year: 2000
-          }
-        }))
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 2,
+      publicLists: 1,
+      listsByPeriod: [],
+      listsWithAlbumCount: [
+        { title: 'Liste 1', _count: { listAlbums: 10 } },
+        { title: 'Liste 2', _count: { listAlbums: 20 } }
+      ],
+      albumYears: [],
+      topArtists: [],
+      topAlbums: [],
+      uniqueAlbumsCount: 30,
+      totalAlbumsCount: 30,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-01-01') }
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -384,44 +316,22 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Petite Liste',
-        period: null,
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: [
-          {
-            album: {
-              discogsId: '1',
-              artist: 'Artist',
-              title: 'Album',
-              year: 2000
-            }
-          }
-        ]
-      },
-      {
-        id: 'list2',
-        title: 'Grande Liste',
-        period: null,
-        isPublic: false,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: Array(50).fill(null).map((_, i) => ({
-          album: {
-            discogsId: `id${i}`,
-            artist: 'Artist',
-            title: `Album ${i}`,
-            year: 2000
-          }
-        }))
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 2,
+      publicLists: 1,
+      listsByPeriod: [],
+      listsWithAlbumCount: [
+        { title: 'Grande Liste', _count: { listAlbums: 50 } },
+        { title: 'Petite Liste', _count: { listAlbums: 1 } }
+      ],
+      albumYears: [],
+      topArtists: [],
+      topAlbums: [],
+      uniqueAlbumsCount: 51,
+      totalAlbumsCount: 51,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-01-01') }
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -437,7 +347,19 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue([])
+    setupPrismaMocks({
+      totalLists: 0,
+      publicLists: 0,
+      listsByPeriod: [],
+      listsWithAlbumCount: [],
+      albumYears: [],
+      topArtists: [],
+      topAlbums: [],
+      uniqueAlbumsCount: 0,
+      totalAlbumsCount: 0,
+      oldestListData: null,
+      newestListData: null
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -456,26 +378,19 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Liste',
-        period: null,
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: Array(15).fill(null).map((_, i) => ({
-          album: {
-            discogsId: `id${i}`,
-            artist: `Artist ${i}`,
-            title: `Album ${i}`,
-            year: 2000
-          }
-        }))
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 1,
+      publicLists: 1,
+      listsByPeriod: [],
+      listsWithAlbumCount: [{ title: 'Liste', _count: { listAlbums: 15 } }],
+      albumYears: Array(15).fill(null).map(() => ({ year: 2000 })),
+      topArtists: Array(10).fill(null).map((_, i) => ({ artist: `Artist ${i}`, _count: { artist: 1 } })),
+      topAlbums: [],
+      uniqueAlbumsCount: 15,
+      totalAlbumsCount: 15,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-01-01') }
+    })
 
     const response = await GET()
     const data = await response.json()
@@ -488,7 +403,8 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    ;(prisma.list.findMany as jest.Mock).mockRejectedValue(new Error('Database error'))
+    // Pour simuler une erreur, faisons échouer le premier appel count
+    ;(prisma.list.count as jest.Mock).mockRejectedValue(new Error('Database error'))
 
     const response = await GET()
     const data = await response.json()
@@ -502,37 +418,26 @@ describe('GET /api/user/stats', () => {
       user: { id: 'user123', email: 'test@example.com' }
     } as any)
 
-    const mockLists = [
-      {
-        id: 'list1',
-        title: 'Liste 1',
-        period: '2020',
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: []
-      },
-      {
-        id: 'list2',
-        title: 'Liste 2',
-        period: '2020',
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: []
-      },
-      {
-        id: 'list3',
-        title: 'Liste 3',
-        period: '1990s',
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        listAlbums: []
-      }
-    ]
-
-    ;(prisma.list.findMany as jest.Mock).mockResolvedValue(mockLists)
+    setupPrismaMocks({
+      totalLists: 3,
+      publicLists: 3,
+      listsByPeriod: [
+        { period: '2020', _count: { period: 2 } },
+        { period: '1990s', _count: { period: 1 } }
+      ],
+      listsWithAlbumCount: [
+        { title: 'Liste 1', _count: { listAlbums: 0 } },
+        { title: 'Liste 2', _count: { listAlbums: 0 } },
+        { title: 'Liste 3', _count: { listAlbums: 0 } }
+      ],
+      albumYears: [],
+      topArtists: [],
+      topAlbums: [],
+      uniqueAlbumsCount: 0,
+      totalAlbumsCount: 0,
+      oldestListData: { createdAt: new Date('2024-01-01') },
+      newestListData: { updatedAt: new Date('2024-01-01') }
+    })
 
     const response = await GET()
     const data = await response.json()

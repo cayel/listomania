@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search, X } from 'lucide-react'
 
 interface Album {
@@ -23,7 +23,6 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Fermer les résultats en cliquant en dehors
   useEffect(() => {
@@ -48,10 +47,8 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
     }
   }, [])
 
-  const performSearch = useCallback(async (searchQuery: string) => {
-    if (searchQuery.length < 2) {
-      setResults([])
-      setIsOpen(false)
+  const handleSearch = async () => {
+    if (query.length < 2) {
       return
     }
 
@@ -59,7 +56,7 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
     setIsOpen(true)
 
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
       if (response.ok) {
         const data = await response.json()
         setResults(data)
@@ -69,29 +66,13 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }
 
-  // Debounce de 300ms pour éviter trop d'appels API
-  useEffect(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch()
     }
-
-    if (query.length >= 2) {
-      debounceTimerRef.current = setTimeout(() => {
-        performSearch(query)
-      }, 300)
-    } else {
-      setResults([])
-      setIsOpen(false)
-    }
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-      }
-    }
-  }, [query, performSearch])
+  }
 
   const handleSelectAlbum = (album: Album) => {
     onSelectAlbum(album)
@@ -106,21 +87,28 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
 
   return (
     <div className="relative" ref={containerRef}>
-      <div className="relative">
+      <div className="relative flex gap-2">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="Rechercher un album ou un artiste..."
-          className="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+          className="flex-1 pl-4 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
         />
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+        <button
+          onClick={handleSearch}
+          disabled={query.length < 2 || isLoading}
+          title="Rechercher"
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-2"
+        >
           {isLoading ? (
-            <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
           ) : (
-            <Search className="h-5 w-5 text-gray-400" />
+            <Search className="h-5 w-5" />
           )}
-        </div>
+          <span className="hidden sm:inline">Rechercher</span>
+        </button>
       </div>
 
       {isOpen && (

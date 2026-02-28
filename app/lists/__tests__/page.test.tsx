@@ -45,13 +45,53 @@ jest.mock('lucide-react', () => ({
   Search: () => <div>Search</div>,
   SlidersHorizontal: () => <div>SlidersHorizontal</div>,
   X: () => <div>X</div>,
-  ArrowUpDown: () => <div>ArrowUpDown</div>
+  ArrowUpDown: () => <div>ArrowUpDown</div>,
+  Grid3x3: () => <div>Grid3x3</div>,
+  List: () => <div>List</div>,
+  Table: () => <div>Table</div>,
+  Eye: () => <div>Eye</div>,
+  EyeOff: () => <div>EyeOff</div>,
+  CheckSquare: () => <div>CheckSquare</div>,
+  Square: () => <div>Square</div>,
+  Trash: () => <div>Trash</div>,
+  BarChart3: () => <div>BarChart3</div>,
+  Tag: () => <div>Tag</div>
 }))
 
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>
 
-global.fetch = jest.fn()
+// Helper pour créer un mock fetch intelligent qui retourne différentes données selon l'URL
+const createMockFetch = (overrides: Record<string, any> = {}) => {
+  return jest.fn((url: string) => {
+    if (url.includes('/api/categories')) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => overrides.categories || []
+      })
+    }
+    if (url.includes('/api/lists')) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => overrides.lists || []
+      })
+    }
+    // Autres URLs personnalisées
+    if (overrides[url]) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => overrides[url]
+      })
+    }
+    // Par défaut
+    return Promise.resolve({
+      ok: true,
+      json: async () => []
+    })
+  })
+}
+
+global.fetch = createMockFetch()
 
 describe('Lists Page', () => {
   const mockRouter = {
@@ -131,10 +171,7 @@ describe('Lists Page', () => {
         update: jest.fn()
       })
 
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockLists
-      })
+      global.fetch = createMockFetch({ lists: mockLists })
 
       render(<Lists />)
 
@@ -490,11 +527,19 @@ describe('Lists Page', () => {
         })
         .mockResolvedValueOnce({
           ok: true,
+          json: async () => []  // categories
+        })
+        .mockResolvedValueOnce({
+          ok: true,
           json: async () => ({ message: 'Import réussi', listId: 'new-list-id' })
         })
         .mockResolvedValueOnce({
           ok: true,
           json: async () => mockLists
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => []  // categories après refresh
         })
 
       const { container } = render(<Lists />)
