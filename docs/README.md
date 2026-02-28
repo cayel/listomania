@@ -1,103 +1,87 @@
-# Documentation Ranklist
+# 📚 Documentation RankList
 
-Bienvenue dans la documentation de Ranklist ! Cette page regroupe tous les guides et ressources disponibles.
+Bienvenue dans la documentation complète de RankList, votre application de gestion de listes d'albums musicaux.
 
-## 📖 Pour commencer
+**Version actuelle : 1.8.0** | [Changelog](../CHANGELOG.md) | [Architecture](../ARCHITECTURE.md)
 
-### Utilisateurs
+---
 
-- **[README.md](../README.md)** - Guide utilisateur complet
-  - Installation et configuration
-  - Fonctionnalités principales
-  - Utilisation de l'application
-  - Import/Export de listes
+## 🚀 Démarrage rapide
 
-### Développeurs
+- **[Guide d'installation](guides/INSTALLATION.md)** - Installation et configuration complète
+- **[Premier pas](guides/QUICK-START.md)** - Débuter avec RankList en 5 minutes
+- **[Tutoriel complet](guides/USER-GUIDE.md)** - Guide utilisateur complet
 
-- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Guide de contribution
-  - Configuration environnement de développement
-  - Conventions de code
-  - Git workflow
-  - Comment proposer une Pull Request
+## 📖 Guides fonctionnels
 
-## 🏗️ Architecture
+### 🎵 Gestion des listes et albums
+- **[Création de listes](features/LISTS-MANAGEMENT.md)** - Créer et organiser vos listes
+- **[Recherche d'albums](features/ALBUM-SEARCH.md)** - Rechercher via Discogs
+- **[Import d'albums](features/IMPORT-ALBUMS.md)** - Import CSV, JSON, Apple Music
 
-- **[ARCHITECTURE.md](../ARCHITECTURE.md)** - Documentation technique complète
-  - Schéma de base de données
-  - Architecture des routes (API + pages)
-  - Flows d'authentification et partage
-  - Système d'import/export
-  - Intégration Discogs
-  - Sécurité et performance
+### 🔍 Exploration et analyse
+- **[Page Explorer](features/EXPLORE-FILTERS.md)** - Filtrer et trier vos listes
+- **[Statistiques](features/STATISTICS.md)** - Comprendre vos statistiques
 
-## 📜 Historique
+### 📊 Export et rapports
+- **[Génération de rapports](features/REPORTS.md)** - Rapports HTML/CSV/TXT avec statistiques
+- **[Export de playlists](features/PLAYLIST-EXPORT.md)** - Exporter en M3U8 et CSV
+- **[Export d'images](features/IMAGE-EXPORT.md)** - Créer des mosaïques visuelles
+- **[Partage de listes](features/SHARING.md)** - Partager vos listes publiquement
 
-- **[CHANGELOG.md](../CHANGELOG.md)** - Historique des versions
-  - Versions publiées avec dates
-  - Nouvelles fonctionnalités
-  - Corrections de bugs
-  - Changements techniques
+## 🛠️ Documentation technique
 
-## 🎵 Fonctionnalités spécifiques
+### Architecture et code
+- **[Vue d'ensemble](../ARCHITECTURE.md)** - Architecture globale de l'application
+- **[Tests](technical/TESTING.md)** - Guide de testing et couverture
+- **[Performance](technical/PERFORMANCE.md)** - Optimisations et cache
 
-### Rapports
+### Développement
+- **[Guide de contribution](../CONTRIBUTING.md)** - Contribuer au projet
+- **[API Discogs](reference/DISCOGS-API.md)** - Intégration Discogs et cache
 
-- **[REPORTS-FEATURE.md](REPORTS-FEATURE.md)** - Génération de rapports de qualité
-  - Sélection multiple de listes
-  - Export en HTML, CSV et texte
-  - Rapports formatés et professionnels
-  - Statistiques et analyses
-  - Filtrage avancé et tri personnalisable
+## 📋 Référence rapide
 
-- **[GUIDE-RAPPORTS.md](GUIDE-RAPPORTS.md)** - Guide utilisateur complet
-  - Tutoriel pas à pas
-  - Exemples de cas d'usage
-  - Conseils et astuces
-  - Dépannage et FAQ
+| Fonctionnalité | Documentation | Version |
+|---------------|---------------|---------|
+| 🎯 Rapports multi-listes | [REPORTS.md](features/REPORTS.md) | 1.8.0 |
+| 🎵 Playlists M3U8/CSV | [PLAYLIST-EXPORT.md](features/PLAYLIST-EXPORT.md) | 1.6.0 |
+| 🖼️ Export images PNG | [IMAGE-EXPORT.md](features/IMAGE-EXPORT.md) | 1.5.0 |
+| 📊 Statistiques | [STATISTICS.md](features/STATISTICS.md) | 1.4.0 |
+| 🔍 Explorer et filtres | [EXPLORE-FILTERS.md](features/EXPLORE-FILTERS.md) | 1.3.0 |
 
-- **[EXEMPLES-FILTRES-RAPPORTS.md](EXEMPLES-FILTRES-RAPPORTS.md)** - Exemples pratiques de filtrage
-  - 7 scénarios d'utilisation détaillés
-  - Combinaisons de filtres avancées
-  - Cas d'usage pour différents besoins
+## ❓ Questions fréquentes
 
-- **[ARCHITECTURE-FILTRES-RAPPORTS.md](ARCHITECTURE-FILTRES-RAPPORTS.md)** - Architecture technique
-  - Gestion d'état et performance
-  - Optimisations avec useMemo
-  - Extensibilité et bonnes pratiques
-  - Guide pour développeurs
+- **[FAQ](FAQ.md)** - Réponses aux questions courantes
+  - Général, compte, listes, albums
+  - Recherche, import/export
+  - Rapports, statistiques, partage
+  - Performance et technique
 
-- **[RAPPORT-HTML-POCHETTES.md](RAPPORT-HTML-POCHETTES.md)** - Design visuel avec pochettes
-  - Aperçu du design en grille
-  - Caractéristiques du layout responsive
-  - Gestion des images et fallbacks
-  - Comparaison avant/après
+## 📝 Nouveautés version 1.8.0
 
-### Export de playlists
+✨ **Système de rapports complet**
+- Export HTML avec grille de pochettes (design geek sobre)
+- Statistiques avancées (Top 10 artistes et années)
+- Filtres et tri complets (visibilité, catégorie, période)
+- Export CSV et TXT avec statistiques
 
-- **[PLAYLIST-EXPORT.md](PLAYLIST-EXPORT.md)** - Guide utilisateur export playlists
-  - Formats disponibles (M3U8, CSV)
-  - Comment importer dans services de streaming
-  - Outils recommandés (Soundiiz, TuneMyMusic)
-  - Limitations et conseils
+🎵 **Intégration Apple Music**
+- Liens de recherche Apple Music pour chaque album
+- Disponible dans les modales, vues liste et grille
+- Encodage URL optimal pour recherches précises
 
-- **[PLAYLIST-FEATURE.md](PLAYLIST-FEATURE.md)** - Documentation technique playlists
-  - Architecture et implémentation
-  - API Discogs pour tracklists
-  - Génération des fichiers M3U8/CSV
-  - Tests unitaires
+Voir le [Changelog complet](../CHANGELOG.md) pour tous les détails.
 
-### Performance
+## 🆘 Besoin d'aide ?
 
-- **[PERFORMANCE-OPTIMIZATIONS.md](PERFORMANCE-OPTIMIZATIONS.md)** - Optimisations v1.6.0 ⚡
-  - Cache des tracklists Discogs (30 jours)
-  - Traitement parallèle (5 albums simultanés)
-  - Résultats de performance (80-97% plus rapide)
-  - Configuration et monitoring
+- 🐛 **Bugs** : Ouvrir une issue sur GitHub
+- 💡 **Suggestions** : Utiliser les discussions GitHub
+- 📧 **Contact** : Voir le [README principal](../README.md)
 
-- **[PLAYLIST-FEATURE.md](PLAYLIST-FEATURE.md)** - Documentation technique playlists
-  - Architecture de la fonctionnalité
-  - Workflow export
-  - Format des fichiers générés
+---
+
+**Navigation** : [Accueil](../README.md) • [Architecture](../ARCHITECTURE.md) • [Contribuer](../CONTRIBUTING.md) • [Changelog](../CHANGELOG.md)
   - API et fonctions Discogs
   - Tests et déploiement
 
