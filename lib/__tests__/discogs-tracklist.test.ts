@@ -3,6 +3,13 @@ import { getDiscogsAlbumWithTracks, DiscogsAlbumWithTracks } from '../discogs'
 // Mock fetch globalement
 global.fetch = jest.fn()
 
+// Mock discogs-cache pour éviter les appels Prisma pendant les tests
+jest.mock('../discogs-cache', () => ({
+  getCachedTracklist: jest.fn().mockResolvedValue(null),
+  setCachedTracklist: jest.fn().mockResolvedValue(undefined),
+  clearCachedTracklist: jest.fn().mockResolvedValue(undefined)
+}))
+
 describe('getDiscogsAlbumWithTracks', () => {
   beforeEach(() => {
     jest.clearAllMocks()
