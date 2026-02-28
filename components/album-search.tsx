@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo } from 'react'
 import { Search, X } from 'lucide-react'
 
 interface Album {
@@ -177,3 +177,6 @@ export function AlbumSearch({ onSelectAlbum }: AlbumSearchProps) {
     </div>
   )
 }
+
+// Optimisation: Mémoriser le composant pour éviter les re-rendus inutiles
+export default memo(AlbumSearch)

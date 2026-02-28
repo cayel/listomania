@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, Plus, Edit2, Trash2, Tag, Eye } from 'lucide-react'
 
@@ -344,3 +344,6 @@ export function CategoryManager({ isOpen, onClose, onCategoriesChange }: Categor
     </div>
   )
 }
+
+// Optimisation: Mémoriser le composant pour éviter les re-rendus inutiles
+export default memo(CategoryManager)

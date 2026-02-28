@@ -77,10 +77,14 @@ model List {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  // Optimisation: Index composés pour les requêtes fréquentes
   @@index([userId])
   @@index([isPublic])
   @@index([updatedAt])
   @@index([createdAt])
+  @@index([userId, isPublic]) // Pour GET /api/lists (filtre par utilisateur)
+  @@index([isPublic, updatedAt]) // Pour GET /api/public/lists (ordre desc)
+  @@index([period]) // Pour filtrage par période
 }
 
 model Album {

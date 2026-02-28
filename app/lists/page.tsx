@@ -1008,6 +1008,9 @@ export default function Lists() {
                                       width={130}
                                       height={130}
                                       className="h-full w-full object-cover"
+                                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                      placeholder="blur"
+                                      blurDataURL="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 130 130'%3E%3Crect fill='%23e5e7eb' width='130' height='130'/%3E%3C/svg%3E"
                                       loading="lazy"
                                     />
                                   ) : (
