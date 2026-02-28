@@ -207,6 +207,18 @@ export function AlbumDetailsModal({ albumId, onClose }: AlbumDetailsModalProps) 
                   <ExternalLink className="h-4 w-4" />
                   Voir sur Discogs
                 </a>
+                <a
+                  href={`https://music.apple.com/search?${new URLSearchParams({ term: `${details.artist} ${details.title}` }).toString()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white rounded-lg font-medium transition-colors text-sm"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M23.994 6.124c0-.738-.034-1.47-.098-2.198-.065-.72-.168-1.438-.363-2.132-.203-.721-.455-1.395-.832-2.013-.377-.613-.85-1.154-1.418-1.596C20.635.95 19.82.63 18.87.443c-.957-.189-1.917-.288-2.888-.328C14.95.086 13.917.073 12.885.073c-1.032 0-2.065.013-3.097.042-.971.04-1.931.139-2.888.328-.95.187-1.765.507-2.413.742-.568.442-1.041.983-1.418 1.596-.377.618-.629 1.292-.832 2.013-.195.694-.298 1.412-.363 2.132-.064.728-.098 1.46-.098 2.198 0 .738.034 1.47.098 2.199.065.72.168 1.438.363 2.132.203.72.455 1.395.832 2.013.377.613.85 1.154 1.418 1.596.648.235 1.463.555 2.413.742.957.188 1.917.288 2.888.328 1.032.029 2.065.042 3.097.042 1.032 0 2.065-.013 3.097-.042.971-.04 1.931-.14 2.888-.328.95-.187 1.765-.507 2.413-.742.568-.442 1.041-.983 1.418-1.596.377-.618.629-1.293.832-2.013.195-.694.298-1.412.363-2.132.064-.729.098-1.461.098-2.199z"/>
+                    <path d="M9.5 15.5v-7l6 3.5-6 3.5z" fill="white"/>
+                  </svg>
+                  Écouter sur Apple Music
+                </a>
               </div>
             </div>
           ) : null}

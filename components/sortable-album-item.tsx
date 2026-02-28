@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useRouter } from 'next/navigation'
-import { GripVertical, X, List } from 'lucide-react'
+import { GripVertical, X, List, Music2 } from 'lucide-react'
 
 interface Album {
   id: string
@@ -91,6 +91,17 @@ export function SortableAlbumItem({ listAlbumId, album, position, onRemove, show
           </p>
         )}
       </div>
+
+      <a
+        href={`https://music.apple.com/search?${new URLSearchParams({ term: `${album.artist} ${album.title}` }).toString()}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-shrink-0 p-2 text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-colors"
+        title="Écouter sur Apple Music"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Music2 className="h-5 w-5" />
+      </a>
 
       <button
         onClick={() => router.push(`/albums/${album.id}`)}
