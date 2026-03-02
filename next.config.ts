@@ -24,14 +24,10 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 5184000,
   },
 
-  // Optimisation: Compression et tree-shaking
-  swcMinify: true,
-  
   // Optimisation: Réduire la taille du bundle
   productionBrowserSourceMaps: false,
-
-  // Optimisation: Préchargement des polices
-  optimizeFonts: true,
+  
+  // Note: swcMinify et optimizeFonts sont activés par défaut dans Next.js 13+
 };
 
 export default nextConfig;
